@@ -1,0 +1,19 @@
+# Drought {.unnumbered}
+
+Drought impacts on water chemistry:
+
+hypotheses:
+
+-   **Temperature:** increased water temperatures expected during drought. or, alternatively, decreased temperatures due to increased ground water contribution.
+
+-   **Acidity:** Expected acid pulse following periods of drought due to production of acidity (from oxidation of reduced S) in catchment soils, which will be flushed out post-drought.
+
+-   **Nutrients:** increased retention in the catchment. Given lower loads, the river will be more nutrient limited.
+
+-   **DOC/water color:** Reduced DOC and water color following drought, and higher aromaticity of DOC.
+
+-   **Ions**: Increased ions following drought (e.g. ca usually higher in winter due to more ground water and less surface flow)
+
+-   **Metals:** (drop?) Increased concentrations following drought if acidic pulse present.
+
+**Approach:** Compare dry (2018, 2021) and relatively wet (2019, 2020) years among the five ecoregions.
