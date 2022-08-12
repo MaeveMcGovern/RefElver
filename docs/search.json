@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Reference Rivers",
+    "section": "",
+    "text": "79 watersheds Water chemistry sampled monthly 2017-2022\nXX samples in 2018 & 2020 XX sampled in 2019 & 2021 4 samples in all years"
+  },
+  {
+    "objectID": "book_spatial.html",
+    "href": "book_spatial.html",
+    "title": "Spatial datasets",
+    "section": "",
+    "text": "Example WatershedElevationSlopeLand CoverWetness\n\n\n\n\n\nCatchments are delineated for Reference River outflow points based on Kartverket’s national 40 m resolution DTM. Here we see seven example catchments with NVE vector data for river and lakes\n\n\n\n\n\n\n\nElevation based on Kartverket’s national 10 m resolution DTM\n\n\n\n\n\n\n\nSlope calculated from the 10m DTM data\n\n\n\n\n\n\n\nCorine land cover data from 2018 reclassified to relevant categories\n\n\n\n\n\n\n\nThe main Water and Wetness (WAW) product with defined classes of (1) permanent water, (2) temporary water, (3) permanent wetness and (4) temporary wetness. Source: Copernicus"
+  },
+  {
+    "objectID": "book_spatial.html#climate-hydrology",
+    "href": "book_spatial.html#climate-hydrology",
+    "title": "Spatial datasets",
+    "section": "Climate & Hydrology",
+    "text": "Climate & Hydrology\n\nClimateHydrology\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’. Is Avrenning = discharge (check unit?)."
+  },
+  {
+    "objectID": "book_spatial.html#catchment-characteristics",
+    "href": "book_spatial.html#catchment-characteristics",
+    "title": "Spatial datasets",
+    "section": "Catchment Characteristics",
+    "text": "Catchment Characteristics\n::: panel-tabset ### Physical characteristics\n\n\n\n\n\n\nLand Cover-Elevation\n\n\n\n\n\n\n\nLand Cover-Drought"
+  },
+  {
+    "objectID": "book_waterchem.html",
+    "href": "book_waterchem.html",
+    "title": "Water Chemistry",
+    "section": "",
+    "text": "PhysicalIonsMetalsAluminumNutrientsCarbon"
+  },
+  {
+    "objectID": "book_waterchem.html#water-chemistry-land-cover",
+    "href": "book_waterchem.html#water-chemistry-land-cover",
+    "title": "Water Chemistry",
+    "section": "Water Chemistry: Land Cover",
+    "text": "Water Chemistry: Land Cover\n\nPhysicalIonsMetalsAluminumNutrientsCarbon"
+  },
+  {
+    "objectID": "book_multivariate.html",
+    "href": "book_multivariate.html",
+    "title": "Multivariate",
+    "section": "",
+    "text": "Catchment CharacteristicsLand CoverClimate"
+  },
+  {
+    "objectID": "book_multivariate.html#water-chem-groups",
+    "href": "book_multivariate.html#water-chem-groups",
+    "title": "Multivariate",
+    "section": "Water Chem Groups",
+    "text": "Water Chem Groups\n\nCatchment CharacteristicsLand CoverClimate"
+  }
+]
