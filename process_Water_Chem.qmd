@@ -1,0 +1,439 @@
+---
+title: "Water Chem Data Prep"
+format: html
+---
+
+# Overview
+
+Load, clean and save (to csv files) all NIVA raw data related to the reference rivers.
+
+Includes: Water chemistry & Biota, but only water chemistry files are properly cleaned and printed to csv (as of August2)
+
+# Load Libraries
+
+```{r}
+knitr::opts_chunk$set(echo=T, message=F, warning=F)
+
+library(fs)
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+# Load Datafiles
+
+```{r}
+list_of_files <- list.files(path = "Raw_Data/NIVA_Data/",
+                            pattern = "\\.xlsx$",
+                            full.names = TRUE)
+
+Data_All <- list_of_files %>%
+  set_names() %>%
+  map_dfr(~{.x %>% 
+            excel_sheets() %>% 
+            set_names() %>% 
+            map_dfr(read_excel, path = .x, .id = "sheet")}, .id = "workbook")
+```
+
+```{r}
+
+# Making one datafile for each sheet in the excel files. Save as csv to cleaned data
+
+X1 <- Data_All %>% 
+  filter(sheet == "Stationsinfo") %>% 
+  row_to_names(2) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X2 <- Data_All %>% 
+  filter(sheet == "Prøvetaker") %>% 
+  row_to_names(2) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X3 <- Data_All %>% 
+  filter(sheet == "Stasjonsplasseringer 2022") %>% 
+  row_to_names(2) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X4 <- Data_All %>% 
+  filter(sheet == "2022_hvem prøvetar") %>% 
+  row_to_names(1) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X5 <- Data_All %>% 
+  filter(sheet == "Feltarbeid 2022_kvittering") %>% 
+  row_to_names(1) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X6 <- Data_All %>% 
+  filter(sheet == "Stasjonsplasseringer 2021") %>% 
+  row_to_names(2) %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X7 <- Data_All %>% 
+  filter(sheet == "Stations") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X8 <- Data_All %>% 
+  filter(sheet == "StationAttribute") %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  clean_names() 
+
+X9 <- Data_All %>% 
+  filter(sheet == "BunndyrVariables") %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  clean_names() 
+
+X10 <- Data_All %>% 
+  filter(sheet == "BegroingVariables") %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  clean_names() 
+
+X11 <- Data_All %>% 
+  filter(sheet == "Input water chemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X12 <- Data_All %>% 
+  filter(sheet == "Input biota chemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+
+# The sheets called InputBegroing & BunndyrCounts have 4 header rows. These matrices need to be transposed so that the species names are across the top. 
+
+X13 <- Data_All %>% 
+  filter(sheet == "InputBegroing") %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  filter(!grepl('mikroskop', x287)) %>% 
+  dplyr::select(-c(workbook:x288)) %>% rename("Taxon" = "x289") %>% 
+  mutate(Taxon = ifelse(grepl("O_002-1869_Dor", overvaking_av_referanseelver_290), "Station_Code",Taxon)) %>% 
+  mutate(Taxon = ifelse(grepl("DAN02", overvaking_av_referanseelver_290), "Station_Name",Taxon)) %>% 
+  mutate(Taxon = ifelse(grepl("2017", overvaking_av_referanseelver_290), "Date",Taxon)) %>% 
+  pivot_longer(!Taxon,values_to = "Abundance") %>% 
+  pivot_wider(names_from= Taxon, values_from = Abundance)
+
+X14 <- Data_All %>% 
+  filter(sheet == "BunndyrCounts") %>% clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  dplyr::select(-c(workbook:sheet)) %>% rename("Taxon" = "x287") %>% 
+  mutate(Taxon = ifelse(grepl("F_196-453_Ros", overvaking_av_referanseelver_290), "Station_Code",Taxon)) %>% 
+  mutate(Taxon = ifelse(grepl("Rostaelva", overvaking_av_referanseelver_290), "Station_Name",Taxon)) %>% 
+  mutate(Taxon = ifelse(grepl("2019", overvaking_av_referanseelver_290), "Date",Taxon)) %>% 
+  pivot_longer(!Taxon,values_to = "Abundance") %>% 
+  pivot_wider(names_from= Taxon, values_from = Abundance) %>% dplyr::select(-TaxonName)
+
+
+# The sheets called BiotaChemistry & WaterChemistry have two rows as headers, so these need to be combined when the files are read into R. 
+
+X15 <- Data_All %>% 
+  filter(sheet == "WaterChemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  drop_na(station_name) %>% 
+  separate(sample_date, c("Date", "Time"), sep = " ") %>% 
+  mutate(Date = str_replace_all(Date, "\\.", "/"))  %>%
+  mutate(Date = dmy(Date)) %>% 
+  mutate(year = year(Date),
+         month = month(Date),
+         day = day(Date)) 
+
+#table of units
+X15b <- Data_All %>% 
+  filter(sheet == "WaterChemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(ag:totp) %>% 
+  filter(ag == "µg/L") %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  pivot_longer(cols= -c(), names_to = "Variable", values_to = "Unit")
+
+
+X16 <- Data_All %>% 
+  filter(sheet == "BiotaChemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  drop_na(station_name)
+
+# table of Units
+X16b <- Data_All %>% 
+  filter(sheet == "BiotaChemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(x1_2_3_triklorbenzen:who_2005_pcdd_f_pcb_teq) %>% 
+  filter(x1_2_3_triklorbenzen == "mg/kg") %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  pivot_longer(cols= -c(), names_to = "Variable", values_to = "Unit")
+
+write.csv(X3, file="Clean_Data/Intermediate/X3.csv")
+write.csv(X6, file="Clean_Data/Intermediate/X6.csv")
+write.csv(X7, file="Clean_Data/Intermediate/X7.csv")
+write.csv(X8, file="Clean_Data/Intermediate/X8.csv")
+write.csv(X15, file="Clean_Data/Intermediate/X15.csv")
+```
+
+
+# Plot and clean (remove outliers, properly replace non-detects with multiple imputation method, use time series methods to look at seasonality)
+
+```{r}
+
+# X15$turbiditet
+# X15$temperatur
+# X15$konduktivitet
+# X15$farge
+# X15$alk_4_5
+# X15$anc
+# X15$p_h
+
+# X15$sts REMOVE
+# X15$sgr_suspendert_gloderest REMOVE
+
+# Metals
+# X15$fe. As is. 
+# X15$al. As is
+# X15$al_l. As is
+
+# X15$cd < 0, 003 = 0. 
+# X15$cu < 0,04 = 0
+# X15$cr < 0,025 = 0
+# X15$al_il < 5 = 0
+# X15$al_r < 5 = 0
+# X15$pb < 0,005 = 0. 
+# X15$ni < 0,04 = 0
+# X15$zn < 0,15 = 0
+
+# X15$ag. Removed: Too many below detection.
+# X15$hg. Removed: Too many below detection. 
+# X15$mn. Removed: Too many below detection. 
+
+# X15$totp < 1 = 0
+# X15$po4_p < 1 = 0
+# X15$no3_n < 2 = 0
+# X15$si_o2 > 6,42
+# X15$totn. < 50; < 10
+
+# X15$po4_f Removed
+# X15$nitrogen_part Removed
+# X15$si. Removed
+# X15$totp_p. Removed
+# X15$nh4_n Removed 
+
+# Replace <LOD with half the detection limit
+Water_Chem <- X15 %>% 
+  mutate(Turbidity = as.numeric(str_replace_all(turbiditet, "< 0,3", "0.15")),
+         Cd_ug_L = as.numeric(ifelse(grepl("< 0,003", cd), "0.0015", cd)),
+         Cu_ug_L = as.numeric(ifelse(grepl("< 0,04", cu), "0.02", cu)),
+         Cr_ug_L = as.numeric(ifelse(grepl("< 0,025", cr), "0.0125", cr)),
+         Al_il_ug_L = as.numeric(ifelse(grepl("< 5", al_il), "2.5", al_il)),
+         Al_r_ug_L = as.numeric(ifelse(grepl("< 5", al_r), "2.5", al_r)),
+         Pb_ug_L = as.numeric(ifelse(grepl("< 0,005", pb), "0.0025", pb)),
+         Ni_ug_L = as.numeric(ifelse(grepl("< 0,04", ni), "0.02", ni)),
+         Zn_ug_L = as.numeric(ifelse(grepl("< 0,15", zn), "0.75", zn)),
+         TotP_ug_L = as.numeric(ifelse(grepl("<", totp), "0.5", totp)),
+         totn = ifelse(grepl("< 50", totn), "25", totn),
+         TotN_ug_L = as.numeric(ifelse(grepl("< 10", totn), "5", totn)),
+         PO4_ug_L = as.numeric(ifelse(grepl("<", po4_p), "0.5", po4_p)),
+         NO3_ug_L = as.numeric(ifelse(grepl("<", no3_n), "1", no3_n)),
+         SiO2_mg_L = as.numeric(ifelse(grepl("<", si_o2), "3.21", si_o2))) %>% 
+  mutate(DOC = doc_34 %>% is.na %>% ifelse(doc_33, doc_34)) %>% 
+  mutate(Temp_C = as.numeric(temperatur), 
+         Conductivity_mS_m = as.numeric(konduktivitet),
+         Water_Color_mgPt_l = as.numeric(farge), 
+         Alkalinity_mmol_L = as.numeric(alk_4_5),
+         ANC_µEkv_L = as.numeric(anc),
+         pH = as.numeric(p_h), 
+         Mg_mg_L = as.numeric(mg),
+         K_mg_L = as.numeric(k),
+         Ca_mg_L = as.numeric(ca), 
+         SO4_mg_L = as.numeric(so4),
+         Na_mg_L = as.numeric(na),
+         Fe_ug_L = as.numeric(fe), 
+         Al_ug_L = as.numeric(al),
+         Al_l_ug_L = as.numeric(al_l), 
+         DOC_mg_L = as.numeric(DOC),
+         TOC_mg_L = as.numeric(toc)) %>% 
+   mutate(station_name = str_replace_all(station_name, "ø", "o"),
+         station_name = str_replace_all(station_name, "á", "a"),
+         station_name = str_replace_all(station_name, "å", "a"),
+         station_name = str_replace_all(station_name, "æ", "ae"),
+         station_name = str_replace_all(station_name, "Å", "A"),
+         station_name = str_replace_all(station_name, "Ø", "O"),
+         station_name = str_replace_all(station_name, "Æ", "AE")) %>% 
+   dplyr::select(c(station_id = station_id_2, site_id = station_code, station_name, Date, Time, 
+                  Temp_C, Turbidity, Conductivity_mS_m, Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L, pH, 
+                  Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, 
+                  Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, 
+                  Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, 
+                  TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L,
+                  DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols = -c(station_id, site_id, station_name, Date, Time), 
+               names_to = "Variable", values_to = "Measurement") %>% 
+  group_by(station_id, site_id, station_name, Date, Time, Variable) %>% 
+  summarise(Measurement = mean(Measurement)) %>% 
+  #filter(between(Measurement, mean(Measurement, na.rm=TRUE) - (90 * sd(Measurement, na.rm=TRUE)), 
+                             # mean(Measurement, na.rm=TRUE) + (90* sd(Measurement, na.rm=TRUE)))) %>% 
+  pivot_wider(names_from = "Variable", values_from = "Measurement") %>% 
+  distinct()
+
+write_csv(Water_Chem, "Clean_Data/RefElv_WaterChem.csv")
+```
+
+
+# Write csv: metadatafiles (Station Info)
+```{r}
+DEM <- read_csv("Clean_Data/Intermediate/watershed_means.csv")
+Area <- read_csv("Clean_Data/Intermediate/watershed_info.csv")
+land_cover <- read_csv("Clean_Data/Intermediate/landcover_df.csv") 
+
+X3 <- read_csv("Clean_Data/Intermediate/X3.csv")
+X6 <- read_csv("Clean_Data/Intermediate/X6.csv")
+X7 <- read_csv("Clean_Data/Intermediate/X7.csv")
+X8 <- read_csv("Clean_Data/Intermediate/X8.csv")
+
+# Station Info
+Y0 <- full_join(X3, X6) %>%
+  dplyr::select(c(site_id = aqua_monitor_kode, okoregion, rapportnavn)) %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_"), site_id = str_replace_all(site_id, " ", ""),
+         site_id = str_replace_all(site_id, "ø", "o"), site_id = str_replace_all(site_id, "å", "a"),
+         site_id = str_replace_all(site_id, "á", "a"), site_id = str_replace_all(site_id, "Ø", "O"),
+         okoregion = str_replace_all(okoregion, "ø", "o"), okoregion = str_replace_all(okoregion, "Ø", "O")) %>% 
+  separate(rapportnavn, into=c("x", "rapportnavn"), sep="\\.") %>% 
+  separate(rapportnavn, into=c("rapportnavn", "x"), sep="\\(") %>% 
+  mutate(rapportnavn = str_replace_all(rapportnavn, "-", "_"), 
+         rapportnavn = str_replace_all(rapportnavn, "ø", "o"), 
+         rapportnavn = str_replace_all(rapportnavn, "å", "a"), 
+         rapportnavn = str_replace_all(rapportnavn, "á", "a"), 
+         rapportnavn = str_replace_all(rapportnavn, "Ø", "O")) %>% 
+  dplyr::select(c(site_id, okoregion, rapportnavn))
+
+Y1 <- X7 %>% dplyr::select(c(station_id, latitude, longitude))
+Y2 <- X8 %>% dplyr::select(c(station_id, fylke,fylkenummer, kommunenavn, kommunenummer))
+Y3 <- full_join(Y1, Y2) 
+
+Station_Info2 <- full_join(Y3, Area) %>% distinct() %>% drop_na(watershed_km2) 
+Station_Info3 <- full_join(Station_Info2, DEM) %>% rename(site_id= station_code) %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_"), site_id = str_replace_all(site_id, " ", ""),
+         fylke = str_replace_all(fylke, "ø", "o"), site_id = str_replace_all(site_id, "ø", "o"), 
+         fylke = str_replace_all(fylke, "å", "a"), site_id = str_replace_all(site_id, "å", "a"),
+          fylke = str_replace_all(fylke, "á", "a"), site_id = str_replace_all(site_id, "á", "a"),
+         fylke = str_replace_all(fylke, "æ", "ae"), site_id = str_replace_all(site_id, "æ", "ae"),
+         fylke = str_replace_all(fylke, "Å", "A"),  site_id = str_replace_all(site_id, "Å", "A"),
+         fylke = str_replace_all(fylke, "Ø", "O"), site_id = str_replace_all(site_id, "Ø", "O"),
+         fylke = str_replace_all(fylke, "Æ", "AE"), site_id = str_replace_all(site_id, "Æ", "AE")) 
+	
+Station_Info4 <- full_join(Station_Info3, Y0) %>% 
+  mutate(okoregion = ifelse(grepl("F_234_229_Mas", site_id), "Finnmark", okoregion)) %>% 
+  mutate(okoregion = ifelse(grepl("V_050_82_Bjo|V_035_56_Tjo|V_074_178_Utl|V_062_266_Rau|V_094_55_Dra", site_id), "Vest", okoregion)) %>% 
+  mutate(okoregion = ifelse(grepl("O_015_687_Sma|O_002_3483_Ror|O_002_218_Teg|O_002_2042_Sjoa|O_002_2572_Lun", site_id), "Ostlandet", okoregion)) %>% 
+  mutate(okoregion = ifelse(grepl("S_021_1187_VesB|S_021_1193_Gei|S_016_2954_Ber|S_017_196_Far", site_id), "Sorlandet", okoregion)) %>% 
+  mutate(okoregion = ifelse(grepl("O_002_620_Lei", site_id), "Ostlandet", okoregion)) %>% 
+  mutate(okoregion = ifelse(grepl("M_128_201_Lei_b", site_id), "Midt-Norge", okoregion)) %>% 
+  distinct() %>% drop_na(watershed) %>% 
+  mutate(rapportnavn = ifelse(grepl("O_002_2042_Sjoa", site_id), "Sjoa", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("V_074_178_Utl", site_id), "Utla", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("O_002_2042_Sjoa", site_id), "Sjoa", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("O_015_687_Smaa", site_id), "Smadola", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("O_002_218_Teg", site_id), "Tegninga", rapportnavn)) %>% 
+  mutate(rapportnavn = ifelse(grepl("O_002_3483_Ror", site_id), "Ror", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("_Tjo", site_id), "Tjo", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("55_Dra", site_id), "Dra", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("1193_Gei", site_id), "Gei", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("2954_Ber", site_id), "Ber", rapportnavn)) %>% 
+  mutate(rapportnavn = ifelse(grepl("_Far", site_id), "Far", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("_Lun", site_id), "Lun", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("_Lei_b", site_id), "Lei_b", rapportnavn)) %>%
+  mutate(rapportnavn = ifelse(grepl("_VesB", site_id), "VesB", rapportnavn)) %>% 
+  mutate(rapportnavn = ifelse(grepl("Bjo", site_id), "Bjo", rapportnavn))
+
+Climate_tm <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
+  filter(par =="tm") %>% 
+  dplyr::select(c(site_id, monthly_mean)) %>% 
+  drop_na() %>% 
+  group_by(site_id) %>% 
+  summarise(mean_annual_tm = mean(monthly_mean) %>% round(2))
+
+Climate_rr <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
+  filter(par =="rr") %>% 
+  dplyr::select(c(site_id, monthly_sum)) %>% 
+  group_by(site_id) %>% 
+  summarise(sum_annual_rr = sum(monthly_sum) %>% round(2))
+
+Climate_gwb_q <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
+  filter(par =="gwb_q") %>% 
+  dplyr::select(c(site_id, monthly_mean)) %>% 
+  group_by(site_id) %>% 
+  summarise(mean_annual_gwb_q = mean(monthly_mean) %>% round(2))
+
+Climate_gwb_sssrel <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
+  filter(par =="gwb_sssrel") %>% 
+  dplyr::select(c(site_id, monthly_mean)) %>% 
+  group_by(site_id) %>% 
+  summarise(mean_annual_gwb_sssrel = mean(monthly_mean) %>% round(2))
+
+Climate_gwb_sssrel2 <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
+  filter(par =="gwb_sssrel") %>% 
+  filter(year == "2018") %>% 
+  dplyr::select(c(site_id, monthly_min)) %>% 
+  group_by(site_id) %>% 
+  summarise(min_2018_gwb_sssrel = min(monthly_min))
+
+X <- full_join(Climate_tm, Climate_rr)
+XX <- full_join(Climate_gwb_q, Climate_gwb_sssrel)
+XXX <- full_join(XX, Climate_gwb_sssrel2)
+XXXX <- full_join(X, XXX)
+XXXXX <- full_join(XXXX, land_cover) %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_"), site_id = str_replace_all(site_id, " ", ""),
+         site_id = str_replace_all(site_id, "ø", "o"), site_id = str_replace_all(site_id, "å", "a"),
+         site_id = str_replace_all(site_id, "á", "a"), site_id = str_replace_all(site_id, "æ", "ae"),
+         site_id = str_replace_all(site_id, "Å", "A"), site_id = str_replace_all(site_id, "Ø", "O"),
+         site_id = str_replace_all(site_id, "Æ", "AE")) 
+
+Station_Info <- full_join(Station_Info4, XXXXX) %>% 
+  janitor::clean_names() %>% 
+  dplyr::select(c(site_id, fylke, rapportnavn, latitude, longitude, area_km2 = watershed_km2, mean_elevation:woodland_scrub)) 
+
+write_csv(Station_Info, file = "Clean_Data/Station_Info.csv")
+```
+
+
+# Cleaner version to match to climate data
+```{r}
+Water_Clean <- read_csv("Clean_Data/RefElv_WaterChem.csv") %>% 
+  mutate(year = year(Date), month = month(Date), day = day(Date)) %>% 
+  mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
+  dplyr::select(c(site_id, Date, Al_il_ug_L:Zn_ug_L)) %>% 
+  filter_at(vars(Al_il_ug_L:Zn_ug_L),any_vars(!is.na(.))) %>%  # Remove rows that are entirely NA
+   mutate(site_id = str_replace_all(site_id, "-", "_"),
+          site_id = str_replace_all(site_id, " ", ""),
+          site_id = str_replace_all(site_id, "ø", "o"),
+          site_id = str_replace_all(site_id, "å", "a"),
+          site_id = str_replace_all(site_id, "Små", "Sma"),
+          site_id = str_replace_all(site_id, "á", "a"),
+          site_id = str_replace_all(site_id, "æ", "ae"),
+          site_id = str_replace_all(site_id, "Å", "A"),
+          site_id = str_replace_all(site_id, "Ø", "O"),
+          site_id = str_replace_all(site_id, "Æ", "AE"),
+          site_id = str_replace_all(site_id, "S_021_1187_VesB", "S_021_1187_Ves"),
+          site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei"))
+
+write_csv(Water_Clean, file = "Clean_Data/Intermediate/Water_processed.csv")
+```
+
+
+# Joined Climate and Water chem 
+```{r}
+Climate_Clean <- read_csv("Clean_Data/Intermediate/Climate_processed.csv")
+Water_Clean <- read_csv("Clean_Data/Intermediate/Water_processed.csv")
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") 
+
+X <- full_join(Station_Info, Climate_Clean)
+
+Water_Chem_Climate <- full_join(X, Water_Clean) %>%
+  filter_at(vars(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l), any_vars(!is.na(.))) %>% 
+  filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) # Remove clay rivers
+
+summary(Water_Chem_Climate)
+write_csv(Water_Chem_Climate, file = "Clean_Data/Water_Chem_Climate.csv")
+```
+
+
+

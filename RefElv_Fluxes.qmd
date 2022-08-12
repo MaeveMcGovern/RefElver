@@ -1,0 +1,301 @@
+---
+title: "RefElv_Fluxes"
+format: html
+editor: visual
+---
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(lubridate)
+library(jpeg)
+library(pdftools)
+library(arrow)
+library(zoo)
+```
+
+
+# files for juptyerhub
+```{r}
+Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
+  dplyr::select(c(site_id, par, datetime, value_mean)) %>% 
+  separate(datetime, c("date", "Time"), sep = " ") %>% 
+  filter(par =="Q") %>% 
+  pivot_wider(names_from ="par", values_from = "value_mean") %>% 
+  group_by(site_id, date) %>% 
+  mutate(flow_m3ps = Q/11574.1) %>% 
+  ungroup() %>% 
+  dplyr::select(site_id, date, flow_m3ps) %>% 
+  mutate(date = ymd(date)) %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
+  mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
+
+write_csv(Drought_Daily, "Clean_Data/Intermediate/Drought_Data_daily2.csv")
+
+#DOC_data <- Water_Chem_Climate %>% 
+#  ungroup() %>% 
+#  dplyr::select(site_id, date=Date, DOC_mg_L) 
+  
+##write_csv(DOC_data, "Clean_Data/Intermediate/DOC_data.csv")
+
+#interp_data <- full_join(Drought_Daily, DOC_data) %>% 
+ #   filter(grepl("2018", date)) %>% 
+  #filter(site_id == "F_212_1729_Lah")
+#
+# NivaPy includes a stats module that implements several robust, non-parametric trend tests such as Mann-Kendall and Sen's slope. These are simple, but well suited to the characteristics of typical environmental datasets. In the code below, we test for a trend in the mean annual TOC concentration at Langtjern.on annual averages
+
+# NivaPy's stats module includes an estimate_fluxes function, which provides basic tools for calculating riverine fluxes/loads (this functionality will be expanded over time). For a description of what's currently available, use the help system, as described above:
+  
+# We will compare the results for annual fluxes from three different flux estimation procedures for TOC at Langtjern. First, however, we need to rename some columns in our data: as described in the help file above, the estimate_fluxes function expects the discharge column to be named flow_m3/s (not flow_m3ps) and the chemistry data to be named e.g. TOC_mg/l (not TOC_mgpl). This can easily be changed:
+
+# We now loop over the three methods of estimating fluxes and join the results into a single dataframe (using similar techniques to those described above). This code is a little more complicated than anything else in this notebook, but it's mostly a matter of combining ideas introduced above with basic Python syntax for looping and merging data.
+  
+# linear_interpolation
+# simple_means
+# log_log_linear_regression
+# ospar_annual
+
+```
+
+
+```{r}
+Water_Chem_Climate <- read_csv_arrow("Clean_Data/Water_Chem_Climate.csv")
+Drought_Daily <- read_csv_arrow("Clean_Data/Intermediate/Drought_Data_daily2.csv")
+
+names(Water_Chem_Climate)
+Water_data <- Water_Chem_Climate %>% 
+  ungroup() %>% 
+  dplyr::select(site_id, date=Date, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Al_ug_L, Ca_mg_L, Fe_ug_L, DOC_mg_L, K_mg_L, Mg_mg_L, Na_mg_L, NO3_ug_L, PO4_ug_L, SiO2_mg_L, SO4_mg_L, TOC_mg_L, TotN_ug_L, TotP_ug_L) 
+
+interp_data <- full_join(Drought_Daily, Water_data) %>% 
+  drop_na(flow_m3ps)
+
+# Daily concentrations (linear interpolation)
+
+# 2017
+df_2017 <- interp_data %>%
+  filter(grepl("2017",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps) 
+
+monthly_flux_2017 <- df_2017 %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2017 <- df_2017 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+
+# 2018
+df_2018 <- interp_data %>%
+  filter(grepl("2018",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps) 
+
+monthly_flux_2018 <- df_2018 %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2018 <- df_2018 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+
+# 2019
+df_2019 <- interp_data %>%
+  filter(grepl("2019",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps)
+
+monthly_flux_2019 <- df_2019 %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2019 <- df_2019 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+# 2020
+df_2020 <- interp_data %>%
+  filter(grepl("2020",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps) 
+
+monthly_flux_2020 <- df_2020 %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2020 <- df_2020 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+  
+# 2021
+df_2021 <- interp_data %>%
+  filter(grepl("2021",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps) 
+
+monthly_flux_2021 <- df_2021 %>% 
+   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2021 <- df_2021 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+
+# 2022
+df_2022 <- interp_data %>%
+  filter(grepl("2022",date)) %>% 
+  mutate(date = ymd(date)) %>%
+  mutate(month = month(date)) %>%
+  mutate(year = year(date)) %>% 
+  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>% 
+  group_by(site_id, variable) %>% 
+  mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
+  drop_na(concentrations) %>% 
+  group_by(site_id, variable, date) %>% 
+  mutate(flux = concentrations * flow_m3ps) 
+
+monthly_flux_2022 <- df_2022 %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  group_by(site_id, variable, year, month) %>% 
+  summarise(monthly_flux = sum(flux, na.rm = TRUE))
+
+annual_flux_2022 <- df_2022 %>% 
+  dplyr::select(c(site_id, variable, year, flux)) %>% 
+  group_by(site_id, variable, year) %>% 
+  summarise(annual_flux = sum(flux, na.rm = TRUE))
+
+# joining
+daily_flux_all <- rbind(df_2017, df_2018, df_2019, df_2020, df_2021, df_2022) %>%  distinct()
+  
+annual_flux_all <- rbind(annual_flux_2017, annual_flux_2018, annual_flux_2019, annual_flux_2020, annual_flux_2021, annual_flux_2022) %>%  distinct()
+
+monthly_flux_all <- rbind(monthly_flux_2017, monthly_flux_2018, monthly_flux_2019, monthly_flux_2020, monthly_flux_2021, monthly_flux_2022) %>%  distinct()
+
+write_csv_arrow(daily_flux_all, "Clean_Data/daily_flux_all.csv")
+write_csv_arrow(monthly_flux_all, "Clean_Data/monthly_flux_all.csv")
+write_csv_arrow(annual_flux_all, "Clean_Data/annual_flux_all.csv")
+```
+
+```{r}
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, okoregion)
+
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(year = as.character(year)) %>% 
+  ggplot(aes(x = okoregion, y = annual_flux, color = year)) +
+  geom_boxplot() +
+ # scale_y_log10() + 
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  theme_bw() +
+  xlab(NULL) + ylab("Annual Flux") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Annual_Flux_19_21.pdf", Plot, width = 8, height = 12, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Annual_Flux_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_19_21.jpeg")
+
+
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  mutate(year = as.character(year)) %>% 
+  ggplot(aes(x = okoregion, y = annual_flux, color = year)) +
+  geom_boxplot() +
+  #scale_y_log10() + 
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  theme_bw() +
+  xlab(NULL) + ylab("Annual Flux") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Annual_Flux_18_20.pdf", Plot, width = 8, height = 12, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Annual_Flux_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_18_20.jpeg")
+
+
+# Daily flux
+
+Plot <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(year %in% c("2018")) %>% 
+  ggplot(aes(x = log10(flow_m3ps), y = log10(flux), color = okoregion)) +
+  geom_point(size =0.1) +
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  theme_bw() 
+
+ggsave("Figures/daily_flux_v_Q.pdf", Plot, width = 8, height = 12, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/daily_flux_v_Q.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/daily_flux_v_Q.jpeg")
+
+
+
+# DOC
+Plot <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(!year %in% c("2017", "2022")) %>% 
+  filter(variable %in% c("DOC_mg_L")) %>% 
+  ggplot(aes(x = log10(flow_m3ps), y = log10(flux), color = as.character(year))) +
+  geom_point(size =0.1) +
+  facet_wrap(~site_id, scales = "free", ncol = 4) +
+  theme_bw() 
+
+ggsave("Figures/daily_flux_v_Q_DOC.pdf", Plot, width = 8, height = 20, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/daily_flux_v_Q_DOC.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/daily_flux_v_Q_DOC.jpeg")
+```
+

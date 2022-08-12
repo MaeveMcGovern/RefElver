@@ -1,0 +1,484 @@
+---
+title: "Process_landcover"
+format: html
+editor: visual
+---
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+# Land cover classes
+
+Reclassify land cover and save as new tiff file.
+
+```{r}
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# Land cover raster files from 2018
+LandCoverRast2018 <- rast("Raw_Data/land_cover/Raster/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+
+# Crop the raster files (which cover all of Europe) to the pasvik watershed outline
+watershed70 = st_transform(watershed70, "EPSG:3035")
+
+LandCoverRast2018_2 <- crop(LandCoverRast2018, vect(watershed70))
+LandCoverRast2018_crop <- mask(LandCoverRast2018_2, vect(watershed70))
+LandCoverRast2018_proj <- terra::aggregate(LandCoverRast2018_crop, fact = 2)
+
+levels(LandCoverRast2018_crop)
+freq(LandCoverRast2018_crop)
+
+m <- c(1, 45,
+       2, 45,
+       3, 45,
+       4, 45,
+       5, 45,
+       6, 45,
+       7, 45,
+       8, 45,
+       9, 45,
+       10, 45,
+       11, 45,
+       12, 45,
+       13, 45,
+       14, 45,
+       15, 45,
+       16, 45,
+       17, 45,
+       18, 45,
+       19, 45,
+       20, 45,
+       22, 45,
+       26, 45,
+       28, 45,
+       30, 45,
+       33, 45,
+       35, 45,
+       37, 45,
+       38, 45,
+       39, 45,
+       40, 45,
+       42, 45,
+       43, 45)
+
+#Reclassify the map with help of the matrix
+rclmat <- matrix(m, ncol=2, byrow=TRUE) # important to specify number of columns = 2, (e.g. could put 3 if three columns). 
+veg_rcl <- classify(LandCoverRast2018_proj, rclmat) # This can take hours! 
+
+writeRaster(veg_rcl, "Raw_Data/land_cover/land_cover_reclass.tif")
+saveRDS(veg_rcl, "Raw_Data/land_cover/land_cover_reclass.RData")
+```
+
+
+# Calcualte and export land cover (% of each category) for each catchment individually. 
+```{r}
+# Load key files
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70 = st_transform(watershed70, "EPSG:3035")
+
+# Land cover raster files from 2018
+LandCoverRast2018 <- rast("Raw_Data/land_cover/Raster/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+
+m <- c(1, 45,
+       2, 45,
+       3, 45,
+       4, 45,
+       5, 45,
+       6, 45,
+       7, 45,
+       8, 45,
+       9, 45,
+       10, 45,
+       11, 45,
+       12, 45,
+       13, 45,
+       14, 45,
+       15, 45,
+       16, 45,
+       17, 45,
+       18, 45,
+       19, 45,
+       20, 45,
+       22, 45,
+       26, 45,
+       28, 45,
+       30, 45,
+       33, 45,
+       35, 45,
+       37, 45,
+       38, 45,
+       39, 45,
+       40, 45,
+       42, 45,
+       43, 45)
+
+#Reclassify the map with help of the matrix
+rclmat <- matrix(m, ncol=2, byrow=TRUE)
+
+# Function for cropping landcover file to each watershed one at a time. reclassify and extract. 
+landcover_extract = function(x){
+  # Crop the raster to the size of the watershed
+  LandCoverRast2018_2 <- crop(LandCoverRast2018, vect(x))
+  LandCoverRast2018_crop <- mask(LandCoverRast2018_2, vect(x))
+  
+  # Reclassify to new categories and extract data. 
+  veg_rcl <- classify(LandCoverRast2018_crop, rclmat) 
+  veg_crop <- crop(veg_rcl, vect(x))
+  veg_crop <- mask(veg_crop, vect(x))
+  landcover_df <- terra::extract(veg_crop, vect(x)) 
+  
+  # Summarize the data
+  landcover_df$count <- 1 # add coumn to aid summarization
+  watershed_class_proportion <- landcover_df %>%
+    dplyr::select(LABEL3, count) %>%
+    group_by(LABEL3) %>% 
+    summarise_at(c("count"), sum, na.rm = TRUE) %>% 
+    pivot_wider(names_from = LABEL3, values_from = 'count')
+  
+  # Calculate the percentages per vegetation class and watershed
+  watershed_class_proportion <- watershed_class_proportion %>% 
+    mutate(total = sum(c_across(where(is.numeric)), na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(across(where(is.numeric), ~ . / total*100))
+  
+  return(watershed_class_proportion)
+}
+
+y <- watershed70 %>%
+  nest_by(site_id) %>% 
+  mutate(landcover_df = list(landcover_extract(data)))
+
+landcover_df <- y %>% 
+  dplyr::select(c(site_id, landcover_df)) %>% unnest(landcover_df) %>% 
+  dplyr::select(-c(total)) %>% 
+  rename("Agriculture" = "21",
+         "Broad-leaved forest"= "23",
+         "Coniferous forest" = "24",
+         "Mixed forest" = "25",
+         "Moors and heathland" = "27",
+         "woodland-scrub" = "29",
+         "Bare rocks" = "31",
+         "Sparse vegetation"= "32",
+         "Glacier" = "34",
+         "Peat bogs" = "36", 
+         "Water bodies" =  "41",
+         "Other" = "45") 
+
+landcover_df[is.na(landcover_df)] = 0
+write_csv(landcover_df, file = "Clean_Data/Intermediate/landcover_df.csv")
+```
+
+
+
+
+
+
+# Wetness Index
+
+Load files, crop to watershed and save tiff file.
+```{r}
+# Load the wetness raster files from the wetness folder, crop to watershed and save as a tif file. This only needs to be run once! 
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70 = st_transform(watershed70, "EPSG:3035")
+
+readandproject = function(x){
+  lapply(x, function(x){
+    r = rast(x)
+    crs(r) = "EPSG:3035"
+    r_crop <- crop(r, vect(watershed70))
+    r_crop2 <- mask(r_crop, vect(watershed70))
+    r_proj <- terra::aggregate(r_crop2, fact = 2)
+    return(r_proj)
+  }
+  )
+}
+
+list_of_files <- list.files(path = "Raw_Data/land_cover/wetness/WAW_2018_010m_no_03035_v020/DATA/Yes/",
+                            pattern='\\.tif$', full.names=TRUE)
+
+y <- purrr::map(list_of_files, readandproject) 
+
+rsrc <- sprc(unlist(y))
+m <- mosaic(rsrc)
+
+wetness_proj <- terra::aggregate(m, fact = 2)
+writeRaster(wetness_proj, "Raw_Data/land_cover/wetness/wetness_all.tif")
+#saveRDS(m, "Raw_Data/land_cover/wetness/wetness_all.RData")
+```
+
+
+
+# Calcualte and export wetness index (% of each category) for each catchment individually. (((IN PREP)))
+```{r}
+# Load key files
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70 = st_transform(watershed70, "EPSG:3035")
+
+# Land cover raster files from 2018
+wetness <- rast("Raw_Data/land_cover/wetness/wetness_all.tif")
+
+
+# Function for cropping wetness file to each watershed one at a time and extracting and summaring the results. 
+
+landcover_extract = function(x){
+ 
+   # Crop the raster to the size of the watershed
+    wetness_2 <- crop(wetness, vect(watershed2))
+    wetness_crop <- mask(wetness_2, vect(watershed2))
+    wetness_df <- terra::extract(wetness_crop, vect(watershed2)) 
+  
+  # Summarize the data
+  wetness_df$count <- 1 # add column to aid summarization
+  watershed_class_proportion <- wetness_df %>%
+    dplyr::select(AREA_KM2, ID) %>%
+    group_by(ID) %>% 
+    summarise_at(c("AREA_KM2"), sum, na.rm = TRUE) %>% 
+    pivot_wider(names_from = AREA_KM2, values_from = 'ID')
+  
+  # Calculate the percentages per vegetation class and watershed
+  watershed_class_proportion <- watershed_class_proportion %>% 
+    mutate(total = sum(c_across(where(is.numeric)), na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(across(where(is.numeric), ~ . / total*100))
+  
+  return(watershed_class_proportion)
+}
+
+
+watershed2 <- watershed70 %>% 
+  filter(site_id %in% c("O_002-305_Atn_DAN11"))
+
+
+y <- watershed70 %>%
+  nest_by(site_id) %>% 
+  mutate(landcover_df = list(landcover_extract(data)))
+
+wetness_2 <- crop(wetness, vect(watershed70))
+wetness_crop <- mask(wetness_2, vect(watershed70))
+wetness_df <- terra::extract(wetness_crop, vect(watershed70)) 
+
+write_csv(wetness_df, file = "Clean_Data/Intermediate/wetness_df.csv")
+```
+
+
+
+
+# Buffer Zone: extract land cover from buffer. ####Not working yet--too many rivers?
+```{r}
+rivers <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp")
+riverline_projected = st_transform(rivers, "EPSG:3035")
+riverline_shed <- st_intersection(riverline_projected, watershed70)
+  
+# Make a buffer at 50m distance
+buffer50 <- st_buffer(riverline_shed, dist = 50) # buffer of 50 meters around the lines
+v50 <- vect(buffer50) # vectorize the buffer
+
+##Now we turn the buffer into a raster layer
+r50 <- rast(v50,res=10) # empty raster with the extent of the buffer shapefile and resolution of 10m 
+z50 <- rasterize(v50, r50) # rasterize the buffer
+names(z50)[1] <- "buff50" # Give the buffer a unique name
+```
+# Buffer
+```{r}
+# Load key files
+#watershed2 <- watershed70 %>% 
+  #filter(site_id %in% c("O_002-305_Atn_DAN11"))
+
+
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70 = st_transform(watershed70, "EPSG:3035")
+
+rivers <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp")
+riverline_projected = st_transform(rivers, "EPSG:3035")
+  
+# Land cover raster files from 2018
+LandCoverRast2018 <- rast("Raw_Data/land_cover/Raster/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+
+m <- c(1, 45,
+       2, 45,
+       3, 45,
+       4, 45,
+       5, 45,
+       6, 45,
+       7, 45,
+       8, 45,
+       9, 45,
+       10, 45,
+       11, 45,
+       12, 45,
+       13, 45,
+       14, 45,
+       15, 45,
+       16, 45,
+       17, 45,
+       18, 45,
+       19, 45,
+       20, 45,
+       22, 45,
+       26, 45,
+       28, 45,
+       30, 45,
+       33, 45,
+       35, 45,
+       37, 45,
+       38, 45,
+       39, 45,
+       40, 45,
+       42, 45,
+       43, 45)
+
+#Reclassify the map with help of the matrix
+rclmat <- matrix(m, ncol=2, byrow=TRUE)
+
+# Function for cropping landcover file to each watershed one at a time. reclassify and extract. 
+landcover_extract = function(x){
+  
+  # Make a buffer at 50m distance
+  riverline_shed <- st_intersection(riverline_projected, x)
+  buffer50 <- st_buffer(riverline_shed, dist = 50) # buffer of 50 meters around the lines
+  v50 <- vect(buffer50) # vectorize the buffer
+
+  # Now we turn the buffer into a raster layer
+  r50 <- rast(v50,res=10) # empty raster with the extent of the buffer shapefile and resolution of 10m 
+  z50 <- rasterize(v50, r50) # rasterize the buffer
+  names(z50)[1] <- "buff50" # Give the buffer a unique name
+
+  # Crop the raster to the size of the watershed
+  LandCoverRast2018_2 <- crop(LandCoverRast2018, vect(x))
+  LandCoverRast2018_crop <- mask(LandCoverRast2018_2, vect(x))
+  z50_2 <- crop(z50, vect(x))
+  z50_crop <- mask(z50_2, vect(x))
+  # Reclassify to new categories and extract data. 
+  veg_rcl <- classify(LandCoverRast2018_crop, rclmat) 
+  veg_crop <- crop(veg_rcl, vect(x))
+  veg_crop <- mask(veg_crop, vect(x))
+  buffer50_prj <- project(z50_crop, veg_crop) # project buffer to match 
+
+  #We stack all the layers on top of each other
+  stack <- c(veg_crop, buffer50_prj)
+
+  #We extract all the stacked data
+  landcover_buffer_df <- terra::extract(stack, vect(x)) 
+  landcover_buffer_df <- landcover_buffer_df %>% 
+    mutate(river_buffer50 = ifelse(grepl ("elva", buff50), "1", buff50))
+
+  # Summarize the data
+  landcover_buffer_df$count <- 1 # add column to aid summarization
+  watershed_class_proportion <- landcover_buffer_df %>%
+    filter(river_buffer50 == "1") %>% 
+    dplyr::select(LABEL3, count) %>%
+    group_by(LABEL3) %>% 
+    summarise_at(c("count"), sum, na.rm = TRUE) %>% 
+    pivot_wider(names_from = LABEL3, values_from = 'count')
+  
+  # Calculate the percentages per vegetation class and watershed
+  watershed_class_proportion <- watershed_class_proportion %>% 
+    mutate(total = sum(c_across(where(is.numeric)), na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(across(where(is.numeric), ~ . / total*100))
+  
+  return(watershed_class_proportion)
+}
+
+y <- watershed70 %>%
+  filter(!site_id %in% c("F_221-93_Kob", "F_238-48_San", "M_123-499_Hom", "M_128-169_Nod")) %>% 
+  nest_by(site_id) %>% 
+  mutate(landcover_buffer_df = list(landcover_extract(data)))
+
+landcover_buffer_df <- y %>% 
+  dplyr::select(c(site_id, landcover_buffer_df)) %>% unnest(landcover_buffer_df) %>% 
+  dplyr::select(-c(total)) %>% 
+  rename("Agriculture" = "21",
+         "Broad-leaved forest"= "23",
+         "Coniferous forest" = "24",
+         "Mixed forest" = "25",
+         "Moors and heathland" = "27",
+         "woodland-scrub" = "29",
+         "Bare rocks" = "31",
+         "Sparse vegetation"= "32",
+         "Glacier" = "34",
+         "Peat bogs" = "36", 
+         "Water bodies" =  "41",
+         "Other" = "45") 
+
+landcover_buffer_df[is.na(landcover_buffer_df)] = 0
+write_csv(landcover_df, file = "Clean_Data/Intermediate/landcover_buffer_df.csv")
+```
+
+
+
+
+
+# Load Riparian zone land cover files
+
+```{r}
+# Load vector data
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+r = st_read("Raw_Data/land_cover/Riparian/rpz_DU027A.shp", driver = 'ESRI Shapefile', stringsAsFactors =F) 
+r_proj = st_transform(r, "EPSG:25833") # Update to watershed coordinate systems
+r_shed <- st_intersection(r_proj, watershed70) # Clip to watershed extent
+
+r2 = read_sf("Raw_Data/land_cover/Riparian/rpz_DU028A.shp", driver = 'ESRI Shapefile') 
+r_proj2 = st_transform(r2, "EPSG:25833") # Update to watershed coordinate systems
+r_shed2 <- st_intersection(r_proj2, watershed70) # Clip to watershed extent
+
+r3 = read_sf("Raw_Data/land_cover/Riparian/rpz_DU030A.shp", driver = 'ESRI Shapefile') 
+r_proj3 = st_transform(r3, "EPSG:25833") # Update to watershed coordinate systems
+r_shed3 <- st_intersection(r_proj3, watershed70) # Clip to watershed extent
+
+r4 = read_sf("Raw_Data/land_cover/Riparian/rpz_DU037A.shp", driver = 'ESRI Shapefile') 
+r_proj4 = st_transform(r4, "EPSG:25833") # Update to watershed coordinate systems
+r_shed4 <- st_intersection(r_proj4, watershed70) # Clip to watershed extent
+
+c <- bind_rows(r_shed, r_shed2, r_shed3, r_shed4) # Combine to one shape file
+st_write(c, "Raw_Data/Raw_Data/land_cover/Riparian.shp", driver="ESRI Shapefile")
+```
+
+```{r}
+watershed2 <- watershed70 %>% 
+  filter(site_id %in% c("O_002-305_Atn_DAN11"))
+
+riparian_zone <- read_sf("Raw_Data/Raw_Data/land_cover/Riparian.shp") # Load combined file. 
+
+v50 <- vect(riparian_zone) # Vectorize the shape file
+r50 <- rast(v50,res=10) #make a raster the size of the shape fil with a resolution of 10. 
+
+z50 <- rasterize(watershed2, r50, "name") #rasterize to the size of the watershed. 
+names(z50)[1] <- "riparian"
+
+z50_2 <- crop(z50, vect(watershed2))
+z50_crop <- mask(z50_2, vect(watershed2))
+
+landcover_buffer_df <- terra::extract(z50_crop, vect(watershed2)) 
+
+
+# Summarize the data
+landcover_buffer_df$count <- 1 # add column to aid summarization
+
+watershed_class_proportion <- landcover_buffer_df %>%
+    dplyr::select(LABEL3, count) %>%
+    group_by(LABEL3) %>% 
+    summarise_at(c("count"), sum, na.rm = TRUE) %>% 
+    pivot_wider(names_from = LABEL3, values_from = 'count')
+  
+  # Calculate the percentages per vegetation class and watershed
+watershed_class_proportion <- watershed_class_proportion %>% 
+    mutate(total = sum(c_across(where(is.numeric)), na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(across(where(is.numeric), ~ . / total*100))
+  
+  return(watershed_class_proportion)
+  
+```
+

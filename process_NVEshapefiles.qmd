@@ -1,0 +1,212 @@
+---
+title: "Process_NVEshapefiles"
+format: html
+---
+
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+```
+
+
+# Read the NVE shape files in NVE_refelv folder and crop to the watershed area. Then combine and print to new shape file 
+
+```{r}
+# Watershed file. 
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# Function
+readandcrop_shape = function(x){
+  lapply(x, function(x){
+    r = read_sf(x) # read as shape file
+    r_proj = st_transform(r, "EPSG:25833") # Update to watershed coordinate systems
+    r_shed <- st_intersection(r_proj, watershed70) # Clip to watershed extent
+    return(r_shed)
+  }
+  )
+}
+
+
+# HovedElv Shapefiles
+list_of_files <- list.files(path = "Raw_Data/Shape_files/NVE_RefElv/NVEData/Elv/", pattern='\\.shp$', full.names=TRUE) # directory
+y <- purrr::map(list_of_files, readandcrop_shape) # Run the function on all the files. 
+
+c <- bind_rows(unlist(y)) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Hovedelv_all.shp", driver="ESRI Shapefile")
+
+
+# Innsjo Shapefiles
+list_of_files <- list.files(path = "Raw_Data/Shape_files/NVE_RefElv/NVEData/Innsjo/", pattern='\\.shp$', full.names=TRUE) # directory
+y <- purrr::map(list_of_files, readandcrop_shape) # Run the function on all the files. 
+
+c <- bind_rows(unlist(y)) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Innsjo_all.shp", driver="ESRI Shapefile")
+```
+
+
+# The long way...but it works. The code above needs more work (how to combine rows in a list)
+```{r}
+# Watershed file. 
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# HovedElv Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Elv/Elv_Hovedelv.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_proj_M <- st_zm(r_proj, drop = TRUE, what = "ZM")
+r_shed <- st_intersection(r_proj_M, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Elv/Elv_Hovedelv2.shp") 
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_proj2_M <- st_zm(r_proj2, drop = TRUE, what = "ZM")
+r_shed2 <- st_intersection(r_proj2_M, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Elv/Elv_Hovedelv3.shp") 
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_proj3_M <- st_zm(r_proj3, drop = TRUE, what = "ZM")
+r_shed3 <- st_intersection(r_proj3_M, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp", driver="ESRI Shapefile")
+
+# Innsjo Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Innsjo/Innsjo_Innsjo.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Innsjo/Innsjo_Innsjo2.shp") 
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Innsjo/Innsjo_Innsjo3.shp") 
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Innsjo_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamLinje/Vannkraft_DamLinje.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamLinje/Vannkraft_DamLinje2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamLinje/Vannkraft_DamLinje3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_DamLinje_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft DamPunkt Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamPunkt/Vannkraft_DamPunkt.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamPunkt/Vannkraft_DamPunkt2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_DamPunkt/Vannkraft_DamPunkt3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_DamPunkt_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft Delfelt Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Delfelt/Vannkraft_Delfelt.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Delfelt/Vannkraft_Delfelt2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Delfelt/Vannkraft_Delfelt3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_Delfelt_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft Inntakspunkt Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Inntakspunkt/Vannkraft_Inntakspunkt.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Inntakspunkt/Vannkraft_Inntakspunkt2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Inntakspunkt/Vannkraft_Inntakspunkt3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_Inntakspunkt_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft Magasin Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Magasin/Vannkraft_Magasin.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Magasin/Vannkraft_Magasin2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Magasin/Vannkraft_Magasin3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_Magasin_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft Vannkraftverk Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Vannkraftverk/Vannkraft_Vannkraftverk.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Vannkraftverk/Vannkraft_Vannkraftverk2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+r3 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Vannkraftverk/Vannkraft_Vannkraftverk3.shp")
+r_proj3 = st_transform(r3, "EPSG:25833")
+r_shed3 <- st_intersection(r_proj3, watershed70) 
+
+c <- bind_rows(r_shed, r_shed2, r_shed3) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_Vannkraftverk_all.shp", driver="ESRI Shapefile")
+
+
+# Vannkraft Vannvei Shapefiles
+r = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Vannvei/Vannkraft_Vannvei.shp") 
+r_proj = st_transform(r, "EPSG:25833")
+r_shed <- st_intersection(r_proj, watershed70) 
+
+r2 = read_sf("Raw_Data/Shape_files/NVE_RefElv/NVEData/Vannkraft_Vannvei/Vannkraft_Vannvei2.shp")
+r_proj2 = st_transform(r2, "EPSG:25833")
+r_shed2 <- st_intersection(r_proj2, watershed70) 
+
+
+c <- bind_rows(r_shed, r_shed2) # Combine to one shape file
+st_write(c, "Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_Vannvei_all.shp", driver="ESRI Shapefile")
+```
+

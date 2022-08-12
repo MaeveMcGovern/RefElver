@@ -1,0 +1,117 @@
+---
+title: "RefElv_Modeling"
+format: html
+---
+
+Combines climate data/drought index with water chemistry data. 
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(janitor)
+library(fs)
+library(readxl)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+```{r}
+Catchment_Climate %>%
+  ggplot(aes(x = month, y = monthly_mean)) +
+  geom_point() +
+  facet_grid(par~year, scales = "free")
+```
+
+
+
+```{r}
+list_of_files <- list.files(path = "Raw_Data/",
+                            pattern = "\\.xlsx$",
+                            full.names = TRUE)
+
+Data_All <- list_of_files %>%
+  set_names() %>%
+  map_dfr(~{.x %>% 
+            excel_sheets() %>% 
+            set_names() %>% 
+            map_dfr(read_excel, path = .x, .id = "sheet")}, .id = "workbook")
+
+head(unique((Data_All$sheet)))
+
+
+X7 <- Data_All %>% 
+  filter(sheet == "Stations") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0))
+
+X15 <- Data_All %>% 
+  filter(sheet == "WaterChemistry") %>% 
+  clean_names() %>% 
+  dplyr::select(where(~sum(!is.na(.x)) > 0)) %>% 
+  drop_na(station_name) %>% 
+  separate(sample_date, c("Date", "Time"), sep = " ") %>% 
+  mutate(Date = str_replace_all(Date, "\\.", "/"))  %>%
+  mutate(Date = dmy(Date)) %>% 
+  mutate(year = year(Date),
+         month = month(Date),
+         day = day(Date)) 
+
+Water_Chem <- X15 %>% 
+  mutate(site_id = station_code, 
+         DOC = as.numeric(doc_34),
+         NO3 = as.numeric(no3_n),
+         pH = as.numeric(p_h),
+         Temp = as.numeric(temperatur),
+         K = as.numeric(k),
+         Color = as.numeric(farge)) %>% 
+  dplyr::select(Date, site_id, DOC, NO3, pH, Temp, K, Color) %>% 
+  pivot_longer(cols= -c(Date, site_id), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(datetime = ymd(Date)) %>%
+  mutate(year = year(Date),month = month(Date, label = TRUE), day = day(Date))
+  
+
+Meta <- X7 %>% 
+  dplyr::select(c(site_id, name, latitude, longitude))
+
+XX <- full_join(Meta, Water_Chem) %>% drop_na(Date)
+
+```
+```{r}
+library(glue)
+Catchment_Climate2 <- Catchment_Climate %>% 
+  pivot_longer(cols= -c(site_id, par, year, month), names_to = "stat", values_to = "value") %>% 
+  mutate(Variable = glue("{par}_{stat}")) %>% 
+  ungroup() %>% 
+  dplyr::select(-c(stat, par)) %>% 
+  pivot_wider(names_from= "Variable", values_from = "value")
+
+Water_Chem2 <- Water_Chem %>% 
+  ungroup() %>% 
+  dplyr::select(-c(Date, datetime, day)) %>% 
+  group_by(site_id, year, month, Variable) %>% 
+  summarise_all(funs(mean)) %>% drop_na(Measurement) %>% 
+  pivot_wider(names_from = "Variable", values_from = "Measurement")
+
+Modeling <- full_join(Catchment_Climate2, Water_Chem2) %>% 
+  mutate(year = as.factor(year)) %>% 
+  filter(year %in% c("2017", "2018", "2019", "2020")) 
+```
+
+
+```{r}
+
+Modeling %>% 
+  ggplot(aes(x = rr_monthly_mean, y = DOC, color =year)) +
+  geom_point() + scale_y_log10() +
+  facet_grid(~year) 
+
+
+# Fluxes -- calculate based on daily discharge?? Match the days! 
+```

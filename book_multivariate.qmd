@@ -1,0 +1,40 @@
+# Multivariate {.unnumbered}
+
+## Multivariate analysis: All Variables
+
+::: panel-tabset
+### Catchment Characteristics
+
+![](Figures/multibar_all.jpeg){fig-align="center" width="50%"}
+
+
+### Land Cover
+
+![](Figures/multibar3_all.jpeg){fig-align="center" width="50%"}
+
+
+### Climate
+
+![](Figures/multibar2_all.jpeg){fig-align="center" width="50%"}
+
+:::
+
+## Water Chem Groups
+
+::: panel-tabset
+
+### Catchment Characteristics
+
+![](Figures/multibar.jpeg){fig-align="center" width="75%"}
+
+
+### Land Cover
+
+![](Figures/multibar3.jpeg){fig-align="center" width="80%"}
+
+
+### Climate
+
+![](Figures/multibar2.jpeg){fig-align="center" width="70%"}
+
+:::

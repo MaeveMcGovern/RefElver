@@ -1,0 +1,951 @@
+---
+title: "RefElv_Multivariate"
+format: html
+---
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(mgcv)
+library(lubridate)
+library(jpeg)
+library(pdftools)
+library(vegan)
+
+# Load data
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+Station_Info <- read_csv("Clean_Data/Station_Info.csv")
+```
+
+# PCA
+```{r}
+
+# Dataset for calculating PCA
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, rr:gwb_sssrel, Al_il_ug_L:Zn_ug_L)) %>% drop_na()
+
+#mutate_at(vars(c(Al_il_ug_L:Zn_ug_L)),~scale(.))
+
+Envar2 <- Data  %>% 
+  dplyr::select(c(Al_il_ug_L:Zn_ug_L)) %>% drop_na()
+Envar <- scale(Envar2)
+
+# PCA in Vegan
+water_chem_PCA <- rda(Envar)
+water_chem_PCA
+
+
+PCAscores <- scores(water_chem_PCA, display = "sites") %>% as.data.frame() 
+PCAvect <- scores(water_chem_PCA, display = "species") %>% as.data.frame() %>% rownames_to_column("species")
+
+fit_envar <- envfit(water_chem_PCA, Envar, perm = 999, na.rm = T) %>% 
+  scores(., display = "vectors") %>% 
+  as.data.frame() %>% 
+  rownames_to_column("species")
+
+#Plot
+Plot_PCA <- ggplot() +
+  geom_point(data = PCAscores, aes(x = PC1, y = PC2, color = Data$mean_elevation), 
+             size= 3, alpha = 0.7) +
+  theme_classic() +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) + 
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +
+  labs(x = "PC1 (39 %)", y = "PC2 (27 %)") + 
+  #geom_segment(data = fit_envar, aes(x = 0, xend = PC1, y = 0, yend = PC2), 
+             #  arrow = arrow(length = unit(0.1, "cm")), col = "gray45") +
+  geom_text(data = fit_envar, aes(x = PC1, y= PC2, label = species), 
+                  parse = T, col="gray45", size = 5, segment.size = 0.15) +
+  theme(text = element_text(size = 15),legend.text = element_text(size=rel(0.6)), 
+          legend.title = element_blank(), panel.background = element_rect(colour = "black", size=1)) + 
+  ylim(-1.5, 1.5) + xlim(-1.5, 1.5) 
+
+Plot_PCA
+```
+
+# RDA function 
+```{r}
+# Function for running many RDAs
+rda_print = function(x){
+    water_chem_PCA <- rda(Envar ~ x)
+    X1 <- summary(water_chem_PCA)$cont$importance[2, "RDA1"] %>% as.data.frame() %>% 
+      rename("Proportion "= ".") 
+    return(X1)
+}
+
+# Groupings
+# Phys: Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L
+# Metals: Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L
+# Metals 2: Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L
+# Ions: Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L
+# Nutrients: TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L
+# Carbon: DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l
+```
+
+# RDA All water chem
+```{r}
+# All
+names(Water_Chem_Climate)
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year, area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors: Catchment char
+Predictors <- Data %>% 
+  dplyr::select(c(area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+All_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "All")
+
+
+# Predictors: CLimate
+Predictors <- Data %>% 
+  dplyr::select(c(month, year,rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+All_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "All")
+
+# Predictors: Land Cover
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+All_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "All")
+```
+
+
+# RDA Phys
+```{r}
+# Phys
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictor: Catchment char
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Phys_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Phys")
+
+# Predictor: Catchment char
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Phys_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Phys")
+
+
+# Predictor: Land Cover
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Phys_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Phys")
+```
+
+# RDA Metals
+```{r}
+# Metals
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel,gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals")
+
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals")
+```
+
+# RDA Metals2: Al
+```{r}
+# Metals2
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, gwb_sssrel, year, area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals2_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals2")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals2_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals2")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Metals2_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals2")
+```
+
+# RDA Ions
+```{r}
+# Ions
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Ions_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Ions")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Ions_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Ions")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Ions_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Ions")
+```
+
+# RDA Nutrients
+```{r}
+# Nutrients
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Nutrients_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Nutrients")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q,gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Nutrients_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Nutrients")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) 
+
+y <- purrr::map(Predictors, rda_print) 
+
+Nutrients_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Nutrients")
+```
+
+
+# RDA carbon
+```{r}
+# Carbon
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel, gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c( area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel))
+
+y <- purrr::map(Predictors, rda_print) 
+
+Carbon_t <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Carbon")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, rr, tm, gwb_q, gwb_sssrel))
+
+y <- purrr::map(Predictors, rda_print) 
+
+Carbon_C <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Carbon")
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub))
+
+y <- purrr::map(Predictors, rda_print) 
+
+Carbon_L <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Carbon")
+```
+
+
+```{r}
+
+# Catchment CHar
+RDA_table <- rbind(All_t, Phys_t, Ions_t, Metals_t, Metals2_t, Nutrients_t, Carbon_t) %>% 
+  mutate(percent = proportion * 100) %>% 
+  mutate(predictor = str_replace_all(predictor, ".Proportion", "")) %>% 
+  mutate(predictor = str_replace_all(predictor, "mean", "m")) %>% 
+  mutate(predictor = str_replace_all(predictor, "annual", "an")) %>% 
+  dplyr::select(c(response, predictor, percent)) %>% 
+  group_by(response) %>% 
+  mutate(predictor = fct_reorder(predictor, desc(percent)))
+
+
+Plot_All <- RDA_table %>%  
+  filter(response == "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar_all.pdf", Plot_All, width = 3.5, height = 2.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar_all.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar_all.jpeg")
+
+
+Plot <- RDA_table %>%  
+  filter(response != "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free", ncol = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar.pdf", Plot, width = 6, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar.jpeg")
+
+
+# Climate
+RDA_table <- rbind(All_C, Phys_C, Ions_C, Metals_C, Metals2_C, Nutrients_C, Carbon_C) %>% 
+  mutate(percent = proportion * 100) %>% 
+  mutate(predictor = str_replace_all(predictor, ".Proportion", "")) %>% 
+  dplyr::select(c(response, predictor, percent)) %>% 
+  group_by(response) %>% 
+  mutate(predictor = fct_reorder(predictor, desc(percent)))
+
+
+Plot_All <- RDA_table %>%  
+  filter(response == "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar2_all.pdf", Plot_All, width = 3.5, height = 2.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar2_all.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar2_all.jpeg")
+
+
+Plot <- RDA_table %>%  
+  filter(response != "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free", ncol = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar2.pdf", Plot, width = 5, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar2.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar2.jpeg")
+
+# Land Cover
+RDA_table <- rbind(All_L, Phys_L, Ions_L, Metals_L, Metals2_L, Nutrients_L, Carbon_L) %>% 
+  mutate(percent = proportion * 100) %>% 
+  mutate(predictor = str_replace_all(predictor, ".Proportion", "")) %>% 
+  dplyr::select(c(response, predictor, percent)) %>% 
+  group_by(response) %>% 
+  mutate(predictor = fct_reorder(predictor, desc(percent)))
+
+
+Plot_All <- RDA_table %>%  
+  filter(response == "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar3_all.pdf", Plot_All, width = 3.5, height = 2.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar3_all.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar3_all.jpeg")
+
+
+Plot <- RDA_table %>%  
+  filter(response != "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free", ncol = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar3.pdf", Plot, width = 6, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar3.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar3.jpeg")
+```
+
+
+
+### Control for Elevation
+
+# RDA function 
+```{r}
+# Function for running many RDAs
+rda_print_noele = function(x){
+    water_chem_PCA <- rda(Envar ~ x + Condition(Elevation))
+    X1 <- summary(water_chem_PCA)$cont$importance[2, "RDA1"] %>% as.data.frame() %>% 
+      rename("Proportion "= ".") 
+    return(X1)
+}
+
+# Groupings
+# Phys: Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L
+# Metals: Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L
+# Metals 2: Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L
+# Ions: Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L
+# Nutrients: TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L
+# Carbon: DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l
+```
+
+# RDA All water chem
+```{r}
+# All
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+All_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "All")
+```
+
+
+# RDA Phys
+```{r}
+# Phys
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Phys_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Phys")
+```
+
+# RDA Metals
+```{r}
+# Metals
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Metals_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals")
+```
+
+# RDA Metals2: Al
+```{r}
+# Metals2
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Metals2_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Metals2")
+```
+
+# RDA Ions
+```{r}
+# Ions
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Ions_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Ions")
+```
+
+# RDA Nutrients
+```{r}
+# Nutrients
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Nutrients_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Nutrients")
+```
+
+
+# RDA carbon
+```{r}
+# Carbon
+Data <- Water_Chem_Climate %>%
+  mutate(month = month(Date)) %>% 
+  mutate(year = year(Date)) %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+
+# Envar
+Envar2 <- Data  %>% 
+  dplyr::select(c(DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+Envar <- scale(Envar2) 
+
+# Condition
+Elevation2 <- Data  %>% 
+  dplyr::select(c(mean_elevation)) 
+Elevation <- scale(Elevation2)
+
+
+# Predictors
+Predictors <- Data %>% 
+  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel))
+
+y <- purrr::map(Predictors, rda_print_noele) 
+
+Carbon_t_noele <- bind_rows(unlist(y), .id = "run") %>% 
+  pivot_longer(!run, names_to = "predictor", values_to = "proportion") %>% 
+  mutate(response = "Carbon")
+```
+
+
+```{r}
+RDA_table <- rbind(All_t_noele, Phys_t_noele, Ions_t_noele, Metals_t_noele, Metals2_t_noele, Nutrients_t_noele, Carbon_t_noele) %>% 
+  mutate(percent = proportion * 100) %>% 
+  mutate(predictor = str_replace_all(predictor, ".Proportion", "")) %>% 
+  mutate(predictor = str_replace_all(predictor, "watershed_km2", "area_km2")) %>% 
+  mutate(predictor = str_replace_all(predictor, "mean", "m")) %>% 
+  mutate(predictor = str_replace_all(predictor, "annual", "an")) %>% 
+  dplyr::select(c(response, predictor, percent)) %>% 
+  group_by(response) %>% 
+  mutate(predictor = fct_reorder(predictor, desc(percent)))
+
+
+Plot_All <- RDA_table %>%  
+  filter(response == "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar_all_noele.pdf", Plot_All, width = 2.5, height = 2.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar_all_noele.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar_all_noele.jpeg")
+
+
+Plot <- RDA_table %>%  
+  filter(response != "All") %>% 
+  ggplot(aes(x= predictor, y = percent)) +
+  geom_bar(stat = "identity",  fill="#f68060", alpha=.6) +
+  ylab("Variance explained (%)") + xlab(NULL) +
+  facet_wrap(~response,  scales = "free") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1))
+
+ggsave("Figures/multibar_noele.pdf", Plot, width = 5, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/multibar_noele.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/multibar_noele.jpeg")
+```
+
+
+```{r}
+# Example outside of the fuunction. 
+#water_chem_PCA <- rda(Envar~Data$year + Condition(Data$mean_elevation)) 
+#X1 <- summary(water_chem_PCA)$cont$importance[2, "RDA1"] %>% as.data.frame() %>% 
+#  rename("Proportion "= ".") %>% 
+#  mutate(Variable = "year")
+```
+
+
+# Catchment characterisitics (Elevation, slope, annual hydrology)
+```{r}
+names(Water_Chem_Climate)
+
+Char <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, area_km2,mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) %>% 
+  pivot_longer(cols= -c(site_id), names_to = "Variable", values_to = "Measurement") %>% distinct() %>% drop_na() %>% 
+  dplyr::select(-c(site_id)) %>% 
+  rownames_to_column("number") %>% distinct()
+  
+Char$Variable <- factor(Char$Variable, levels = c("area_km2", "mean_elevation", "mean_slope", "mean_annual_tm", "sum_annual_rr", "mean_annual_gwb_q", "mean_annual_gwb_sssrel"),
+                          labels = c(bquote("Area"~ (km2)), 
+                                     bquote("Mean Elevation"~ (m)), 
+                                     bquote("Mean Slope"~ (degrees)), 
+                                     bquote("an mean tm"~ (C)), 
+                                     bquote("an sum rr"~ (mm)), 
+                                     bquote("an mean discharge"~ (mm)), 
+                                     bquote("an mean drought"~ (percent))))
+Plot1 <- Char %>% 
+  ggplot() +
+  geom_density(aes(Measurement), fill = "red", alpha = 0.6) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Density.pdf", Plot1, width = 8, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Density.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Density.jpeg")
+```
+
+# Land Cover barplot
+```{r}
+names(Water_Chem_Climate)
+
+LandCov <- Water_Chem_Climate %>% 
+  dplyr::select(c(mean_elevation, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, glacier, peat_bogs, water_bodies, other, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) %>% 
+  pivot_longer(cols= -c(mean_elevation), names_to = "Variable", values_to = "Percent") %>%
+  distinct() %>% 
+  mutate(mean_elevation2 = fct_reorder(as.character(mean_elevation %>% round(1)), mean_elevation, .desc = FALSE)) %>%  drop_na()
+
+LandCov$Variable <- factor(LandCov$Variable, 
+      levels = c("agriculture", "broad_leaved_forest", "coniferous_forest",
+                 "mixed_forest", "moors_and_heathland", "woodland_scrub",
+                 "bare_rocks", "sparse_vegetation", "glacier", "peat_bogs", 
+                 "water_bodies", "other"),
+      labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", 
+                 "Mixed forest", "Moors and heathland", "woodland-scrub", 
+                 "Bare rocks", "Sparse vegetation","Glacier", "Peat bogs",
+                  "Water bodies", "Other"))
+
+library(RColorBrewer)
+colourCount = length(unique(mtcars$hp))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ 
+
+Plot2 <- LandCov %>% 
+  ggplot(aes(x = mean_elevation2, y = Percent, fill = Variable)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  xlab("Elevation (m)") + ylab("Percent cover (%)") +
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 1))
+
+ggsave("Figures/LanBar.pdf", Plot2, width = 10, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/LanBar.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/LanBar.jpeg")
+```
+
+
+# Land Cover barplot: drought
+```{r}
+names(Water_Chem_Climate)
+
+LandCov <- Water_Chem_Climate %>% 
+  dplyr::select(c(min_2018_gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, glacier, peat_bogs, water_bodies, other, coniferous_forest, mixed_forest, agriculture, woodland_scrub)) %>% 
+  pivot_longer(cols= -c(min_2018_gwb_sssrel), 
+               names_to = "Variable", values_to = "Percent") %>%
+  distinct() %>% 
+  mutate(min_drought = fct_reorder(as.character(min_2018_gwb_sssrel), min_2018_gwb_sssrel, .desc = T)) %>%  drop_na() 
+  #group_by(min_drought, Variable) %>%  
+ # summarise(Percent = mean(Percent))
+
+
+LandCov$Variable <- factor(LandCov$Variable, 
+      levels = c("agriculture", "broad_leaved_forest", "coniferous_forest",
+                 "mixed_forest", "moors_and_heathland", "woodland_scrub",
+                 "bare_rocks", "sparse_vegetation", "glacier", "peat_bogs", 
+                 "water_bodies", "other"),
+      labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", 
+                 "Mixed forest", "Moors and heathland", "woodland-scrub", 
+                 "Bare rocks", "Sparse vegetation","Glacier", "Peat bogs",
+                  "Water bodies", "Other"))
+
+library(RColorBrewer)
+colourCount = length(unique(mtcars$hp))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+Plot3 <- LandCov %>% 
+  ggplot(aes(x = min_drought, y = Percent, fill = Variable)) +
+  geom_bar(stat="identity", position="fill") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  xlab("2018 min gwb_sssrel (relative soil saturation, %)") + ylab("Percent cover (%)") +
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 1))
+
+ggsave("Figures/LanBar2.pdf", Plot3, width = 10, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/LanBar2.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/LanBar2.jpeg")
+```
+
+
+
+```{r}
+# Dataset for calculating PCA
+Data <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, watershed_km2: mean_annual_gwb_q)) %>% drop_na()
+
+Envar2 <- Data  %>% 
+  dplyr::select(c(watershed_km2: mean_annual_gwb_q)) %>% drop_na()
+Envar <- scale(Envar2)
+
+# PCA in Vegan
+water_chem_PCA <- rda(Envar)
+water_chem_PCA
+
+
+PCAscores <- scores(water_chem_PCA, display = "sites") %>% as.data.frame() 
+PCAvect <- scores(water_chem_PCA, display = "species") %>% as.data.frame() %>% rownames_to_column("species")
+
+fit_envar <- envfit(water_chem_PCA, Envar, perm = 999, na.rm = T) %>% 
+  scores(., display = "vectors") %>% 
+  as.data.frame() %>% 
+  rownames_to_column("species")
+
+#Plot
+Plot_PCA <- ggplot() +
+  geom_point(data = PCAscores, aes(x = PC1, y = PC2, color = Data$mean_elevation), 
+             size= 3, alpha = 0.7) +
+  theme_classic() +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) + 
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +
+  labs(x = "PC1 (39 %)", y = "PC2 (27 %)") + 
+  #geom_segment(data = fit_envar, aes(x = 0, xend = PC1, y = 0, yend = PC2), 
+             #  arrow = arrow(length = unit(0.1, "cm")), col = "gray45") +
+  geom_text(data = fit_envar, aes(x = PC1, y= PC2, label = species), 
+                  parse = T, col="gray45", size = 5, segment.size = 0.15) +
+  theme(text = element_text(size = 15),legend.text = element_text(size=rel(0.6)), 
+          legend.title = element_blank(), panel.background = element_rect(colour = "black", size=1)) + 
+  ylim(-1.5, 1.5) + xlim(-1.5, 1.5) 
+
+Plot_PCA
+```

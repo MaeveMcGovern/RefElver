@@ -1,0 +1,694 @@
+---
+title: "RefElv_WaterChem"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(mgcv)
+library(lubridate)
+library(jpeg)
+library(pdftools)
+Data <- read_csv("Clean_Data/RefElv_WaterChem.csv")
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+```
+
+
+
+# Raw Plots of Water Chemistry by rivers
+
+```{r}
+names(Water_Chem_Climate)
+#Phys
+Phys <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Plot1 <- Phys %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Phys_sites.pdf", Plot1, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys_sites.jpeg")
+
+#Metals
+Metals <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement")  %>%
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Metals$Variable <- factor(Metals$Variable,
+                        levels = c("Fe_ug_L", "Cd_ug_L", "Cr_ug_L", "Cu_ug_L",
+                                   "Pb_ug_L", "Ni_ug_L", "Zn_ug_L"),
+                        labels = c(bquote('Fe'~ (μg~L^-1)),
+                                   bquote('Cd'~ (μg~L^-1)),
+                                   bquote('Cr'~ (μg~L^-1)),
+                                   bquote('Cu'~ (μg~L^-1)),
+                                   bquote('Pb'~ (μg~L^-1)),
+                                   bquote('Ni'~ (μg~L^-1)),             
+                                   bquote('Zn'~ (μg~L^-1))))
+
+Plot2 <- Metals %>%  
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals_sites.pdf", Plot2, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals_sites.jpeg")
+
+
+#Metals
+Metals2 <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", "Al_l_ug_L", "Al_r_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1))))
+
+Plot3 <- Metals2 %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals2_sites.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2_sites.jpeg")
+
+
+#Ions
+Ions <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+Plot4 <- Ions %>% ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Ions_sites.pdf", Plot4, width = 8, height = 3.75, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions_sites.jpeg")
+
+
+#Nutrients
+
+Nutrients <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "PO4_ug_L", "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+  
+Plot5 <- Nutrients %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Nutrients_sites.pdf", Plot5, width = 9, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients_sites.jpeg")
+
+
+#Carbon
+Carbon <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+  
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Plot6 <- Carbon %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = site_id), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Carbon_sites.pdf", Plot6, width = 6, height = 2, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_sites.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_sites.jpeg")
+```
+
+
+
+
+# Raw Plots of Water Chemistry 
+
+```{r}
+names(Water_Chem_Climate)
+#Phys
+Phys <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Plot1 <- Phys %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values = c("darkblue","coral4")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Phys.pdf", Plot1, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys.jpeg")
+
+#Metals
+Metals <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement")  %>%
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Metals$Variable <- factor(Metals$Variable,
+                        levels = c("Fe_ug_L", "Cd_ug_L", "Cr_ug_L", "Cu_ug_L",
+                                   "Pb_ug_L", "Ni_ug_L", "Zn_ug_L"),
+                        labels = c(bquote('Fe'~ (μg~L^-1)),
+                                   bquote('Cd'~ (μg~L^-1)),
+                                   bquote('Cr'~ (μg~L^-1)),
+                                   bquote('Cu'~ (μg~L^-1)),
+                                   bquote('Pb'~ (μg~L^-1)),
+                                   bquote('Ni'~ (μg~L^-1)),             
+                                   bquote('Zn'~ (μg~L^-1))))
+
+Plot2 <- Metals %>%  
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_y_log10 () + 
+  scale_color_manual(values = c("darkblue","coral4")) +
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals.pdf", Plot2, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals.jpeg")
+
+
+#Metals
+Metals2 <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", "Al_l_ug_L", "Al_r_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1))))
+
+Plot3 <- Metals2 %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values = c("darkblue","coral4")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals2.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2.jpeg")
+
+
+#Ions
+Ions <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+Plot4 <- Ions %>% ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values = c("darkblue","coral4")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Ions.pdf", Plot4, width = 8, height = 3.75, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions.jpeg")
+
+
+#Nutrients
+
+Nutrients <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "PO4_ug_L", "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+  
+Plot5 <- Nutrients %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values = c("darkblue","coral4")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Nutrients.pdf", Plot5, width = 9, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients.jpeg")
+
+
+#Carbon
+Carbon <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
+  drop_na(Elevation)
+  
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Plot6 <- Carbon %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values = c("darkblue","coral4")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Elevation), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Carbon.pdf", Plot6, width = 6, height = 2, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon.jpeg")
+```
+
+
+# Waterchem colors by and cover groupings. 
+```{r}
+names(Water_Chem_Climate)
+#Phys
+Phys <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  #mutate(Coniferous = "Other") %>% 
+  #mutate(Coniferous = ifelse(coniferous_forest > 40, "Coniferous", Coniferous)) %>% 
+  #mutate(Coniferous = ifelse(sparse_vegetation > 40, "Sparse", Coniferous)) %>% 
+  drop_na(Coniferous)
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Plot1 <- Phys %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Phys_lc.pdf", Plot1, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys_lc.jpeg")
+
+#Metals
+Metals <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement")  %>%
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  drop_na(Coniferous)
+
+Metals$Variable <- factor(Metals$Variable,
+                        levels = c("Fe_ug_L", "Cd_ug_L", "Cr_ug_L", "Cu_ug_L",
+                                   "Pb_ug_L", "Ni_ug_L", "Zn_ug_L"),
+                        labels = c(bquote('Fe'~ (μg~L^-1)),
+                                   bquote('Cd'~ (μg~L^-1)),
+                                   bquote('Cr'~ (μg~L^-1)),
+                                   bquote('Cu'~ (μg~L^-1)),
+                                   bquote('Pb'~ (μg~L^-1)),
+                                   bquote('Ni'~ (μg~L^-1)),             
+                                   bquote('Zn'~ (μg~L^-1))))
+
+Plot2 <- Metals %>%  
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_y_log10 () + 
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals_lc.pdf", Plot2, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals_lc.jpeg")
+
+
+#Metals
+Metals2 <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  drop_na(Coniferous)
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", "Al_l_ug_L", "Al_r_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1))))
+
+Plot3 <- Metals2 %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Metals2_lc.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2_lc.jpeg")
+
+
+#Ions
+Ions <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  drop_na(Coniferous)
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+Plot4 <- Ions %>% ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Ions_lc.pdf", Plot4, width = 8, height = 3.75, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions_lc.jpeg")
+
+
+#Nutrients
+Nutrients <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  drop_na(Coniferous)
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "PO4_ug_L", "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+  
+Plot5 <- Nutrients %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Nutrients_lc.pdf", Plot5, width = 9, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients_lc.jpeg")
+
+
+#Carbon
+Carbon <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, coniferous_forest, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, coniferous_forest), names_to = "Variable", values_to = "Measurement") %>% 
+  mutate(Coniferous = ifelse(coniferous_forest >20, "Coniferous", "Other")) %>% 
+  drop_na(Coniferous)
+  
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Plot6 <- Carbon %>% 
+  ggplot(aes(x = Date, y = Measurement)) + 
+  geom_point(size = 0.5, color ="gray75", alpha = 0.4) +
+  scale_color_manual(values = c("chartreuse4","cornflowerblue")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = Coniferous), method = "gam", se = FALSE) +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Carbon_lc.pdf", Plot6, width = 6, height = 2, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_lc.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_lc.jpeg")
+```
+
+
+```{r}
+#library(timetk)
+
+#plot_stl_diagnostics(Data, .date_var = Date, .value = Temp_C)
+
+# Temp
+#plot_seasonal_diagnostics(Data, .date_var = Date, .value = Temp_C, .feature_set= c("month.lbl","quarter", "year"), .y_lab = "Temperature (C)", .geom_outlier_color = "red")
+
+# DOC
+#plot_seasonal_diagnostics(Data, .date_var = Date, .value = DOC_mg_L, .feature_set= c("month.lbl","quarter", "year"), .y_lab = "DOC (mg/L)", .geom_outlier_color = "red")
+```
+
+
+
+```{r}
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+# Hydrology
+Tog_Plotter <- Water_Chem_Climate %>% 
+  dplyr::select(c(site_id, Date, gwb_q,mean_elevation, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date, gwb_q, mean_elevation), names_to = "Variable", values_to = "Measurement") 
+  
+
+Plot7 <- Tog_Plotter %>% 
+  ggplot() + 
+  #geom_point(aes(x = Date, y = gwb_q), size = 0.2, color = "gray45") +
+  geom_point(aes(x = Date, y = Measurement, color = mean_elevation), size = 1.0) +
+  scale_y_continuous(name = "Measurement", # Features of the first axis
+  sec.axis = sec_axis(~., name="Discharge")) +  # Add a second axis and specify its features 
+  geom_smooth(aes(x = Date, y = gwb_q), method = "gam", se = T, color = "gray45") +
+  geom_smooth(aes(x = Date, y = Measurement), method = "gam", se = T, color = "blue") +
+  facet_wrap(~ Variable, scales = "free", labeller = label_parsed, ncol=1) +
+  theme_bw() +
+  xlab(NULL) 
+
+ggsave("Figures/Carbon_discharge.pdf", Plot7, width = 6, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_discharge.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_discharge.jpeg")
+```
+
+
+
+
+
+# 2018 vs 2020 comparison
+
+```{r}
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+# Ca
+Data <- Water_Chem_Climate %>% 
+  mutate(year = year(Date)) %>% 
+  mutate(month = month(Date)) %>% 
+  mutate(day = day(Date)) %>% 
+  mutate(Date = make_date(month, day)) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, gwb_sssrel, Date, year, SO4_mg_L)) 
+
+
+Plot <- Data %>% 
+  ggplot() + 
+ # geom_point(aes(x = Date, y = gwb_sssrel), size = 0.2, color = "gray45") +
+  geom_point(aes(x = Date, y = SO4_mg_L), size = 1.0, color = "blue") +
+  #scale_y_continuous(name = "Ca_mg_L", # Features of the first axis
+ # sec.axis = sec_axis(~., name="gwb-sssrel (%)")) +  # Add a second axis and specify its features 
+  #geom_smooth(aes(x = Date, y = gwb_sssrel), method = "gam", se = T, color = "gray45") +
+  geom_smooth(aes(x = Date, y = SO4_mg_L), method = "gam", se = T, color = "blue") +
+  facet_wrap(~ year, labeller = label_parsed, ncol=1) +
+  theme_bw() +
+  xlab(NULL) 
+
+
+Plot <- Data %>% 
+  ggplot() + 
+  geom_point(aes(x = Date, y = SO4_mg_L), size = 1.0, color = "blue") +
+  geom_smooth(aes(x = Date, y = SO4_mg_L), method = "gam", se = T, color = "blue") +
+  scale_y_log10 () + 
+  facet_wrap(~ year, labeller = label_parsed, ncol=1) +
+  theme_bw() +
+  xlab(NULL)
+
+ggsave("Figures/Ca.pdf", Plot7, width = 6, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ca.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ca.jpeg")
+```
+
+
+
+
+# Q/C Plots
+
+```{r}
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+# Ca
+Data <- Water_Chem_Climate %>% 
+  mutate(year = year(Date)) %>% 
+  mutate(month = month(Date)) %>% 
+  mutate(day = day(Date)) %>% 
+  mutate(Date = make_date(month, day)) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, Q, Date, year,coniferous_forest, DOC_mg_L, NO3_ug_L, Ca_mg_L)) %>% 
+  pivot_longer(col = -c(site_id, Q, Date, year, coniferous_forest), values_to = "measurement", names_to = "Variable")
+
+
+Plot <- Data %>% 
+  ggplot(aes(x = log10(Q), y = log10(measurement), color = coniferous_forest)) + 
+  geom_point(size = 1.0) +
+  geom_smooth(method = "lm", se = T, color = "blue") +
+  facet_grid(Variable ~ year, labeller = label_parsed, scales = "free") +
+  theme_bw() +
+  xlab("log10(Q)") + ylab("log10(Concentration)")
+
+ggsave("Figures/Q_C.pdf", Plot, width = 6, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Q_C.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Q_C.jpeg")
+```
+
+

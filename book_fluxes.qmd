@@ -1,0 +1,9 @@
+# Fluxes {.unnumbered}
+
+![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+
+
+![](Figures/Annual_Flux_18_20.jpeg){fig-align="center"}
+
+
+![](Figures/daily_flux_v_Q_DOC.jpeg){fig-align="center"}

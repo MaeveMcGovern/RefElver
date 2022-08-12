@@ -1,0 +1,244 @@
+---
+title: "RefElv_LandCover"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+Land cover & ndvi from copernicus
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+
+```{r}
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# river station coordinates
+stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
+stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+```
+
+# Ground Cover data shape files
+
+```{r}
+# Land cover using Corine 2018
+st_crs(watershed70)
+LandCover_Corrine <- read_sf("Raw_Data/Shape_files/Land_Cover/LandCover.shp") 
+st_crs(LandCover_Corrine) # Matches watershed coordinate system. 
+Land_Cover <- st_intersection(LandCover_Corrine, watershed70)  
+
+
+Land_Cover <- Land_Cover %>% 
+  mutate(english = ifelse(grepl("Continuous urban fabric", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Discontinuous urban fabric", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Industrial or commercial units", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Road and rail networks and associated land", english), "Other", english)) %>% 
+  mutate(english =  ifelse(grepl("Port areas", english), "Other", english)) %>% 
+  mutate(english =  ifelse(grepl("Airports", english), "Other", english)) %>% 
+  mutate(english =  ifelse(grepl("Mineral extraction sites", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Dump sites", english), "Other", english)) %>% 
+  mutate(english =  ifelse(grepl("Construction sites", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Green urban areas", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Sport and leisure facilities", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Non-irrigated arable land", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Permanently irrigated land", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Rice fields", english), "Other", english)) %>%
+  mutate(english = ifelse(grepl("Vineyards", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Fruit trees and berry plantations" , english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Olive groves", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Pastures", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Annual crops associated with permanent crops" , english), "Other", english)) %>%
+  mutate(english = ifelse(grepl("Complex cultivation patterns", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Land principally occupied by agriculture, with significant areas of natural vegetation", 
+                         english), "Agriculture", english)) %>% 
+  mutate(english = ifelse(grepl("Agro-forestry areas", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Broad-leaved forest", english), "Broad-leaved forest", english)) %>% 
+  mutate(english = ifelse(grepl("Coniferous forest", english), "Coniferous forest", english)) %>% 
+  mutate(english =ifelse(grepl("Mixed forest", english), "Mixed forest", english)) %>% 
+  mutate(english = ifelse(grepl("Natural grasslands", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Moors and heath land", english), "Moors and heathland", english)) %>%
+  mutate(english =ifelse(grepl("Sclerophyllous vegetation", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Transitional woodland-shrub", english), "Transitional woodland-shrub", english)) %>%
+  mutate(english = ifelse(grepl("Beaches, dunes, sands", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Bare rocks", english), "Bare rocks", english)) %>% 
+  mutate(english =ifelse(grepl("Sparsely vegetated areas" , english), "Sparse vegetation", english)) %>% 
+  mutate(english = ifelse(grepl("Burnt areas", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Glacier and prepetual snow", english), "Glaciers", english)) %>% 
+  mutate(english = ifelse(grepl("Inland marshes", english), "Other", english)) %>% 
+  mutate(english =ifelse(grepl("Peat bogs", english), "Peat bogs", english)) %>% 
+  mutate(english = ifelse(grepl("Salt marshes", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Salines", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Intertidal flats", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Water courses", english), "Water", english)) %>% 
+  mutate(english = ifelse(grepl("Water bodies", english), "Water", english)) %>% 
+  mutate(english = ifelse(grepl("Coastal lagoons", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Estuaries", english), "Other", english)) %>% 
+  mutate(english = ifelse(grepl("Sea and ocean", english), "Other", english))                                                           
+                                                                      
+#ifelse(grepl ("NODATA", english), "Other", english)
+#Plot ---remove the lines around the polygons (color=fill)
+
+
+#######
+# Plot the land cover data into an interactive map with a layer for each year. 
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(Land_Cover) +
+         tm_polygons("english") +
+      tm_shape(watershed70) +
+         tm_borders() +
+      tm_facets(by = "site_name")
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Refelv_land_cover.png")
+```
+
+
+# Land cover raster from 2018. 
+
+```{r}
+# Land cover raster file (cleaned & prepped in other file)
+LandCover <- rast("Raw_Data/land_cover/land_cover_reclass.tif")
+
+# Plot the land cover data into an interactive map with a layer for each year. 
+tmap_mode(mode = c("view")) 
+
+# Land Cover in 2018
+tm <- tm_shape(LandCover) + 
+        tm_raster(breaks = c(21,23,24,25,27,29,31,32,34,36,41,44,45, 46),
+                  labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "woodland-scrub", "Bare rocks",
+                             "Sparse vegetation","Glacier", 
+                             "Peat bogs","Water bodies", "Seawater", "Other"),
+                  palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "purple", "darkseagreen1", 
+                              "darkseagreen4", "white",
+                              "coral4", "#2171B5", "#08519C", "black"),
+                  title = "Land Cover") +
+      tm_shape(watershed70) +
+        tm_borders() +
+      tm_shape(stations_cord) + 
+         tm_dots() 
+tm
+tmap_save(tm, filename = "Figures/RefElv_LandCover_Map.html")
+
+
+# Plot the land cover data into an interactive map with a layer for each year. 
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(LandCover) +
+  tm_raster(breaks = c(21,23,24,25,27,29,31,32,34,36,41,44,45, 46),
+        labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "woodland-scrub", "Bare rocks",
+                             "Sparse vegetation","Glacier", 
+                             "Peat bogs","Water bodies", "Seawater", "Other"),
+        palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "purple", "darkseagreen1", 
+                              "darkseagreen4", "white",
+                              "coral4", "#2171B5", "#08519C", "black"),
+        title = "Land Cover") +
+  tm_shape(watershed70) +
+         tm_borders() +
+  tm_facets(by = "site_name")
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/Refelv_land_cover.png")
+
+
+
+# Png of just a few catchments 
+
+watershed2 <- watershed70 %>% 
+  filter(site_id %in% c("O_002-305_Atn_DAN11", "O_002-300_Atn_DAN03", "O_002-305_Atn_DAN04", 
+                        "O_002-1673_Set","O_002-218_Teg", "O_002-2053_Sto", "O_002-1869_Dor"))
+
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(watershed2) +
+         tm_borders() +
+      tm_shape(LandCover) +
+         tm_raster(breaks = c(21,23,24,25,27,29,31,32,34,36,41,44,45,46),
+                   labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "woodland-scrub", "Bare rocks",
+                             "Sparse vegetation","Glacier", 
+                             "Peat bogs","Water bodies", "Seawater", "Other"),
+                    palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "purple", "darkseagreen1", 
+                              "darkseagreen4", "white",
+                              "coral4", "#2171B5", "#08519C", "black"),
+                    title = "Land Cover") +
+       tm_shape(watershed2) +
+          tm_borders() 
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/Refelv_land_cover2.png")
+```
+
+
+# Wetness
+
+```{r}
+water_main <- read_sf("Raw_Data/Shape_files/Elv/Elv_Hovedelv.shp") 
+wetness_finn <- rast("Raw_Data/land_cover/wetness/wetness_all.tif")
+wetness_proj <- terra::aggregate(wetness_finn, fact = 5)
+# 0 = dry
+# 1 = permanent water
+# 2 = Temporary water
+# 3 = Permanent wet
+# 4 = Temporary wet
+# 5 = seawater
+
+tmap_mode(mode = c("view")) 
+
+tm <- tm_shape(wetness_proj) + 
+        tm_raster(breaks = c(0,1,2,3,4,5,6), labels = c("dry", "permanent water", "temporary water", "permanent wetness", "temporary wetness", "seawater"),
+                  palette = c("white",  "#08519C", "#2171B5", "#4292C6", "#6BAED6", "black"),
+                  title="Wetness") + 
+      tm_shape(watershed70) +
+        tm_borders() +
+      tm_shape(water_main) +
+        tm_lines(col = "#08519C") 
+tm
+
+tmap_save(tm, filename = "Figures/Refelv_land_cover.html")
+```
+
+
+# Permafrost?
+```{r}
+
+# Watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+st_crs(watershed70) #"EPSG:32633"
+
+# Load regional permafrost map from Gisnas et al., 2016
+perm <- rast("Raw_Data/permafrost/ppp1922-sup-001-supplementary.tif") 
+terra::ext(perm)
+ext(perm)  <- "7019, 4956, 34786164"
+st_crs(perm) # "EPSG:9122"
+crs(perm)  <- "epsg:25833" # For transforming spatraster to same coordinate system as watershed file. 
+
+plot(perm)
+
+# Crop to watershed
+perm_crop2 <- crop(perm, vect(watershed70))
+perm_crop <- mask(perm_crop2, vect(watershed70))
+```
+
+

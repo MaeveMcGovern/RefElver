@@ -1,0 +1,170 @@
+---
+title: "RefElv_watershed70"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+Process all 70 catchments at the same time. Load DEM file (processed in separate file), calculate slope, and plot and export gridded slope as well as mean slope, evlevation and total area for each catchment. 
+
+
+Note: catchments delineated with 40m DTM in NIVA python workflow. 
+
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+```{r}
+# Load data
+
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# river station coordinates
+stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
+stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+```
+
+
+```{r}
+## Exploring the watershed polygons
+
+# Plot the watershed with baseR functions
+#plot(st_geometry(watershed70)) # from the shapefile, only plot the geometry 
+
+# st_crs(watershed70)  
+
+tmap_mode("plot")
+tm <- tm_shape(watershed70) +
+  tm_polygons(palette = "RdYlBu") +
+    tm_facets(by = "site_id", ncol = 7)
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/watershed_map.png")
+```
+
+
+```{r}
+# Interactive map 
+
+tmap_mode(mode = c("view")) # Set for interactive viewing. 
+tmap_options(check.and.fix = TRUE)  # for error. 
+
+tm <- tm_shape(watershed70) +
+  tm_borders() +  
+tm_shape(stations_cord) +
+  tm_dots()
+
+tm
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/Catchments_polygons.html")
+```
+
+
+# Watershed Slope and Elevation
+
+```{r}
+dem_all <- rast("Raw_Data/DEM/Output/dem_all.tif") 
+#load("Raw_Data/DEM/Output/dem_all.RData")
+
+#Calculate slope from the cropped and joined DEM
+slope <- terrain(dem_all, v = "slope", neighbors = 8, unit = "degrees")
+
+# Downsample to reduce the size
+dem_proj <- terra::aggregate(dem_all, fact = 2)
+slope_proj <- terra::aggregate(slope, fact = 2)
+```
+
+
+
+# Export watershed slope 
+```{r}
+# Stack all the layers on top of each other
+stack <- c(dem_all, slope)
+# Extract all the stacked data for each watershed, this produces a long table with a row for each column
+watershed_df <- terra::extract(stack, vect(watershed70)) 
+
+# Clean dataframe: Rename columns
+watershed_df <- watershed_df %>% 
+  drop_na() %>% 
+  dplyr::select(watershed = ID, 
+                elevation = "6400_1_10m_z33", 
+                slope)
+
+head(watershed_df)
+# Rename watersheds since we lost the watershed names
+
+# We can save the file (this will take some time)
+write_csv(watershed_df, file = "Clean_Data/Intermediate/watershed_df.csv")
+
+
+watershed_means <- watershed_df %>% 
+  group_by(watershed) %>% 
+  summarise(mean_elevation = mean(elevation),
+            mean_slope = mean(slope)) %>% 
+  mutate(mean_elevation = round(mean_elevation, 2)) %>% 
+ mutate(mean_slope = round(mean_slope, 2))
+
+write_csv(watershed_means, file = "Clean_Data/Intermediate/watershed_means.csv")
+```
+
+
+# Plot interactive map
+```{r}
+# Interactive map
+tmap_mode(mode = c("view")) # Set for interactive viewing. 
+cls <- c("blue", "lightblue", "#ffffff80") # Define color scheme
+
+tmap_options(check.and.fix = TRUE) 
+
+tm <- tm_shape(dem_proj) + 
+tm_raster(style = "cont", 
+          title = "elevation (m a.s.l)",
+          palette = "-Spectral", alpha = 0.9) + 
+tm_shape(slope_proj) +
+  tm_raster(alpha = 0.9, title='Slope - degrees') +
+tm_shape(watershed70) +
+  tm_borders() +
+tm_shape(stations_cord) +
+    tm_dots(id = "site_name")
+
+tm
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/Catchments_slope.html")
+```
+
+
+# Plot static map
+```{r}
+#| eval: false
+
+#### static Plot Elevation, slope layers
+
+tmap_mode("plot")
+cls <- c("blue", "lightblue", "#ffffff80") # Define color scheme
+
+tm <- tm_shape(slope_proj) +
+  tm_raster(alpha = 0.9, title='Slope - degrees') +
+tm_shape(watershed70) +
+  tm_polygons() +
+tm_shape(stations_cord) +
+  tm_symbols(size = 0.1, col = "black", shape = 21, id = "site_name")
+tm_facets(by = "site_name")
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "Figures/Slope.png")
+```
+
+

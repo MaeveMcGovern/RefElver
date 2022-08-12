@@ -1,0 +1,411 @@
+---
+title: "RefElv_Example"
+format: html
+editor: visual
+---
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+```
+
+## Load data
+
+```{r}
+# Vector data (lines, points and polygons)
+water_main <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp")
+Innsjo <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Innsjo_all.shp")
+Vannkraft <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_DamPunkt_all.shp")
+
+# river station coordinates
+stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
+stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed2 <- watershed70 %>% 
+  filter(site_id %in% c("O_002-305_Atn_DAN11", "O_002-300_Atn_DAN03", "O_002-305_Atn_DAN04", 
+                        "O_002-1673_Set","O_002-218_Teg", "O_002-2053_Sto", "O_002-1869_Dor"))
+```
+
+## Plot Vector data
+
+```{r}
+# Example watershed
+plot(st_geometry(watershed2)) 
+```
+
+```{r}
+# Plot vector data in interactive map (rivers, station coordinates, watershed extent)
+
+# Static
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(watershed2) +
+  tm_borders() +
+tm_shape(water_main) +
+  tm_lines(col = "blue", alpha = 0.6) + 
+tm_shape(Innsjo) +
+  tm_polygons(col = "blue", alpha = 0.6) + 
+tm_graticules(alpha = 0.4) +
+tm_shape(Vannkraft) +
+  tm_dots(size = 0.05, col = "red") + 
+tm_shape(stations_cord) + 
+  tm_dots(size = 0.05) +
+tm_compass(position = c("left", "bottom")) +
+tm_scale_bar(breaks = c(0, 5, 10), position = c("left", "bottom")) 
+
+tmap_save(tm, filename = "Figures/Example_Watershed_Map.png", width = 5)
+```
+
+## Elevation model and slope
+
+```{r}
+# Load the DEMs from the DEM folder and save as a tif file. This only needs to be run once! 
+
+readandproject = function(x){
+  lapply(x, function(x){
+    r = rast(x)
+    crs(r) = "EPSG:32633"
+    r_crop <- crop(r, vect(watershed2))
+    r_crop2 <- mask(r_crop, vect(watershed2))
+    return(r_crop2)
+  }
+  )
+}
+
+list_of_files <- list.files(path = "Raw_Data/DEM/DEM2/",
+                            pattern='\\.tif$', full.names=TRUE)
+
+y <- purrr::map(list_of_files, readandproject) 
+
+rsrc <- sprc(unlist(y))
+m <- mosaic(rsrc)
+
+writeRaster(m, "SRaw_Data/DEM/Output/dem_all.tif")
+```
+
+```{r}
+# DEM files
+dem <- rast("Raw_Data/DEM/Output/dem_all.tif") 
+dem_crop2 <- crop(dem, vect(watershed2))
+dem_crop <- mask(dem_crop2, vect(watershed2))
+    
+#Calculate slope from the DEM
+slope <- terrain(dem_crop, v = "slope", neighbors = 8, unit = "degrees") # Function terrain, here it calculates the slope (can also do aspect ect). 
+
+# Downsample to reduce the size
+dem_proj <- terra::aggregate(dem_crop, fact = 2)
+slope_proj <- terra::aggregate(slope, fact = 2)
+    
+### Faceted raster maps as png
+stack_raster <- c(dem_crop, slope)
+names(stack_raster) <- c("Elevation (m a.s.l)", "Slope (degrees)")
+
+tm <- tm_shape(watershed2) +
+        tm_borders() +
+      tm_shape(stack_raster) + 
+        tm_raster(style = "cont", palette = "-Spectral", midpoint = NA, title='values') +
+      tm_facets(ncol = 2, free.scales.raster = T) +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_graticules(alpha = 0.8) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(position = c("left", "bottom"), breaks = c(0, 5, 10)) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9, position = c("right", "top")) 
+       
+tmap_save(tm, filename = "Figures/Example_Rasters_Map.png",  width = 8)
+
+tm2 <-tm_shape(stack_raster) + 
+        tm_raster(style = "cont", palette = "-Spectral", midpoint = NA, title='values') +
+      tm_facets(ncol = 2, free.scales.raster = T) +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_shape(watershed2) +
+        tm_borders(col= "black") +
+      tm_shape(stations_cord) + 
+        tm_dots(size = 0.25) +
+      tm_graticules(alpha = 0.8) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(position = c("left", "bottom"), breaks = c(0, 5, 10)) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9, position = c("right", "top")) 
+       
+tmap_save(tm2, filename = "Figures/Example_Rasters_Map2.png",  width = 10)
+
+
+
+tm2 <-tm_shape(dem_proj) + 
+        tm_raster(style = "cont", palette = "-Spectral", midpoint = NA, title='Elevation (m a.s.l)') +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_shape(watershed2) +
+        tm_borders(col= "black") +
+      tm_shape(stations_cord) + 
+        tm_dots(size = 0.25) +
+      tm_graticules(alpha = 0.8) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(position = c("left", "bottom"), breaks = c(0, 5, 10)) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9, position = c("right", "top")) +
+      tm_layout(legend.outside = TRUE, legend.outside.position = "right")
+       
+tmap_save(tm2, filename = "Figures/Example_Rasters_Map_Elev.png",  width = width = 7, height = 4.5)
+
+
+tm2 <-tm_shape(slope) + 
+        tm_raster(style = "cont", palette = "-Spectral", midpoint = NA, title='Slope (degrees)') +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_shape(watershed2) +
+        tm_borders(col= "black") +
+      tm_shape(stations_cord) + 
+        tm_dots(size = 0.25) +
+      tm_graticules(alpha = 0.8) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(position = c("left", "bottom"), breaks = c(0, 5, 10)) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9) +
+      tm_layout(legend.outside = TRUE, legend.outside.position = "right")
+       
+tmap_save(tm2, filename = "Figures/Example_Rasters_Map_slope.png",  width = 7, height = 4.5)
+```
+
+## Land Cover rasters (1990-2018)
+
+```{r}
+
+# Land cover raster files 
+
+LandCoverRast1990 <- rast("Raw_Data/land_cover/Raster/u2000_clc1990_v2020_20u1_raster100m/DATA/U2000_CLC1990_V2020_20u1.tif")
+LandCoverRast2000 <- rast("Raw_Data/land_cover/Raster/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif")
+LandCoverRast2006 <- rast("Raw_Data/land_cover/Raster/u2012_clc2006_v2020_20u1_raster100m/DATA/U2012_CLC2006_V2020_20u1.tif")
+LandCoverRast2012 <- rast("Raw_Data/land_cover/Raster/u2018_clc2012_v2020_20u1_raster100m/DATA/U2018_CLC2012_V2020_20u1.tif")
+LandCoverRast2018 <- rast("Raw_Data/land_cover/Raster/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+
+lcChange_1990_2000 <- rast("Raw_Data/land_cover/Raster/Change/u2000_cha9000_v2020_20u1_raster100m/DATA/U2000_CHA9000_00_V2020_20u1.tif")
+lcChange_2000_2006  <- rast("Raw_Data/land_cover/Raster/Change/u2006_cha0006_v2020_20u1_raster100m/DATA/U2006_CHA0006_00_V2020_20u1.tif")
+lcChange_2006_2012 <- rast("Raw_Data/land_cover/Raster/Change/u2012_cha0612_v2020_20u1_raster100m/DATA/U2012_CHA0612_06_V2020_20u1.tif")
+lcChange_2012_2018 <- rast("Raw_Data/land_cover/Raster/Change/u2018_cha1218_v2020_20u1_raster100m/DATA/U2018_CHA1218_12_V2020_20u1.tif")
+
+# Crop the raster files (which cover all of Europe) to the Example watershed outline
+watershed2 = st_transform(watershed2, "EPSG:3035")
+
+LandCoverRast1990_2 <- crop(LandCoverRast1990, vect(watershed2))
+LandCoverRast1990_crop <- mask(LandCoverRast1990_2, vect(watershed2))
+
+LandCoverRast2000_2 <- crop(LandCoverRast2000, vect(watershed2))
+LandCoverRast2000_crop <- mask(LandCoverRast2000_2, vect(watershed2))
+
+LandCoverRast2006_2 <- crop(LandCoverRast2006, vect(watershed2))
+LandCoverRast2006_crop <- mask(LandCoverRast2006_2, vect(watershed2))
+
+LandCoverRast2012_2 <- crop(LandCoverRast2012, vect(watershed2))
+LandCoverRast2012_crop <- mask(LandCoverRast2012_2, vect(watershed2))
+
+LandCoverRast2018_2 <- crop(LandCoverRast2018, vect(watershed2))
+LandCoverRast2018_crop <- mask(LandCoverRast2018_2, vect(watershed2))
+
+lcChange_1990_2000_2 <- crop(lcChange_1990_2000, vect(watershed2))
+lcChange_1990_2000_crop <- mask(lcChange_1990_2000_2, vect(watershed2))
+
+lcChange_2000_2006_2 <- crop(lcChange_2000_2006, vect(watershed2))
+lcChange_2000_2006_crop <- mask(lcChange_2000_2006_2, vect(watershed2))
+
+lcChange_2006_2012_2 <- crop(lcChange_2006_2012, vect(watershed2))
+lcChange_2006_2012_crop <- mask(lcChange_2006_2012_2, vect(watershed2))
+
+lcChange_2012_2018_2 <- crop(lcChange_2012_2018, vect(watershed2))
+lcChange_2012_2018_crop <- mask(lcChange_2012_2018_2, vect(watershed2))
+
+# Reclassify the raster layers
+# 2018
+m <- c(1, 45,
+       2, 45,
+       3,45,
+       4, 45,
+       5, 45,
+       6, 45,
+       7, 45,
+       8, 45,
+       9, 45,
+       10, 45,
+       11, 45,
+       12, 45,
+       13, 45,
+       14, 45,
+       15, 45,
+       16, 45,
+       17, 45,
+       18, 45,
+       19, 45,
+       20, 45,
+       22, 45,
+       26, 45,
+       28, 45,
+       29, 45,
+       30, 45,
+       33, 45,
+       34, 45,
+       35, 45,
+       37, 45,
+       38, 45,
+       39, 45,
+       42, 45,
+       43, 45)
+
+#Reclassify the map with help of the matrix
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+LandCoverRast2000_rcl <- classify(LandCoverRast2000_crop, rclmat) 
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+LandCoverRast2006_rcl <- classify(LandCoverRast2006_crop, rclmat)
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+LandCoverRast2012_rcl <- classify(LandCoverRast2012_crop, rclmat) 
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+LandCoverRast2018_rcl <- classify(LandCoverRast2018_crop, rclmat) 
+
+# Change
+rclmat <- matrix(m, ncol=2, byrow=TRUE)
+lcChange_2000_2006_rcl <- classify(lcChange_2000_2006_crop, rclmat) 
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+lcChange_2006_2012_rcl <- classify(lcChange_2006_2012_crop, rclmat) 
+rclmat <- matrix(m, ncol=2, byrow=TRUE) 
+lcChange_2012_2018_rcl <- classify(lcChange_2012_2018_crop, rclmat)  
+```
+
+```{r}
+####### Facet wraped land cover static figure. 
+
+stack <- c(LandCoverRast2000_rcl, LandCoverRast2006_rcl, LandCoverRast2012_rcl, LandCoverRast2018_rcl)
+names(stack) <- paste0("Year ",c(2000, 2006, 2012, 2018))
+
+tm <- tm_shape(stack) + 
+        tm_raster(breaks = c(21,23,24,25,27,31,32,36,40,42,44,45),
+                  labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "Bare rocks","Sparse vegetation","Peat bogs", 
+                             "Water courses", "Water bodies", "Seawater/No Data"),
+                  palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "darkseagreen1", "darkseagreen4","coral4", 
+                              "#4292C6", "#2171B5", "#08519C"),
+                  title = "Land Cover") +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_shape(watershed2) +
+        tm_borders() +
+      tm_facets(ncol =2) +
+      tm_graticules(alpha= 0.5) +
+      #tm_compass(position = c("left", "top")) +
+      #tm_scale_bar(breaks = c(0, 25, 50)) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9) +
+      tm_layout(legend.outside = TRUE, legend.outside.position = "right")
+       
+tmap_save(tm, filename = "Figures/Example_LandCover_Map2.png",  width = 8, height = 4)
+
+
+
+# 2018
+tm <- tm_shape(LandCoverRast2018_rcl) + 
+        tm_raster(breaks = c(21,23,24,25,27,31,32,36,40,42,44,45),
+                  labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "Bare rocks","Sparse vegetation","Peat bogs", 
+                             "Water courses", "Water bodies", "Seawater/No Data"),
+                  palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "darkseagreen1", "darkseagreen4","coral4", 
+                              "#4292C6", "#2171B5", "#08519C"),
+                  title = "Land Cover") +
+      tm_shape(water_main) +
+        tm_lines(col = "#2171B5") + 
+      tm_shape(watershed2) +
+        tm_borders(col ="black") +
+      tm_shape(stations_cord) + 
+        tm_dots(size = 0.25) +
+      tm_graticules(alpha= 0.3) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(breaks = c(0, 5, 10), position = c("left", "bottom")) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9) +
+      tm_layout(legend.outside = TRUE, legend.outside.position = "right")
+       
+tmap_save(tm, filename = "Figures/Example_LandCover_2018.png", width = 7, height = 4.5)
+```
+
+## Wetness
+
+```{r}
+# Load the wetness raster files from the wetness folder, crop to watershed and save as a tif file. This only needs to be run once! 
+
+watershed2 = st_transform(watershed2, "EPSG:3035")
+
+readandproject = function(x){
+  lapply(x, function(x){
+    r = rast(x)
+    r_crop <- crop(r, vect(watershed2))
+    r_crop2 <- mask(r_crop, vect(watershed2))
+    return(r_crop2)
+  }
+  )
+}
+
+list_of_files <- list.files(path = "Raw_Data/wetness/",
+                            pattern='\\.tif$', full.names=TRUE)
+
+y <- purrr::map(list_of_files, readandproject) 
+
+rsrc <- sprc(unlist(y))
+m <- mosaic(rsrc)
+
+writeRaster(m, "Raw_Data/Wetness_Norway/wetness_all.tif")
+
+```
+
+```{r}
+wetness_no <- rast("Raw_Data/land_cover/wetness/wetness_all.tif")
+wetness_no_crop <- crop(wetness_no, vect(watershed2))
+wetness_no_crop2 <- mask(wetness_no_crop, vect(watershed2))
+wetness_proj <- terra::aggregate(wetness_no, fact = 2)
+# 0 = dry
+# 1 = permanent water
+# 2 = Temporary water
+# 3 = Permanent wet
+# 4 = Temporary wet
+# 5 = seawater
+
+cls <- c("white",  "#08519C", "#2171B5", "#4292C6", "#6BAED6", "black") # Define color scheme
+
+tmap_mode(mode = c("view")) 
+
+tm <- tm_shape(wetness_proj) + 
+        tm_raster(breaks = c(0,1,2,3,4,5, 6), palette=cls,  title='Wetness') + 
+      tm_shape(watershed2) +
+        tm_borders() 
+tm
+tmap_save(tm, filename = "Figures/Example_wetness_Map.html")
+
+
+# Fixed map
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(watershed2) +
+        tm_borders() +
+      tm_shape(wetness_no_crop2) + 
+      tm_raster(breaks = c(0,1,2,3,4,5, 6), 
+                labels = c("dry", "permanent water", "temporary water", "permanent wetness", "temporary wetness", "no data"),
+                palette = c("white",  "#08519C", "#2171B5", "#4292C6", "#6BAED6", "black"),
+                title="Wetness") +
+      tm_shape(water_main) +
+        tm_lines(col = "#08519C") + 
+      tm_shape(watershed2) +
+        tm_borders(col ="black") +
+      tm_shape(stations_cord) + 
+        tm_dots(size = 0.25) +
+       tm_graticules(alpha= 0.3) +
+      tm_compass(position = c("left", "bottom")) +
+      tm_scale_bar(breaks = c(0, 5, 10), position = c("left", "bottom")) +
+      tm_legend(bg.color="grey95", frame=TRUE, legend.text.size = 0.6, legend.title.size = 0.9)  +
+      tm_layout(legend.outside = TRUE, legend.outside.position = "right")
+  
+tmap_save(tm, filename = "Figures/Example_wetness_Map.png", width = 8)
+```

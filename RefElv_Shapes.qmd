@@ -1,0 +1,87 @@
+---
+title: "RefElv_Shapes"
+format: html
+---
+
+
+```{r}
+knitr::opts_chunk$set(echo=F, message=F, warning=F)
+
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+
+# Watershed Area
+
+```{r}
+# Calculate areas of watersheds using the vector data and print to csv
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70$watershed_area <- set_units(st_area(watershed70), "km2")
+
+watershed_info = st_drop_geometry(watershed70) %>% 
+    mutate(site_id2 = as.character(row_number())) %>% distinct() 
+
+
+#Change the percentage/km2 to numeric format
+watershed_info$watershed_area <- as.numeric(watershed_info$watershed_area)
+
+#Select and rename columns that are interesting to keep
+watershed_info <- dplyr::select(watershed_info, station_code = site_id, watershed =site_id2, latitude = outlet_lat, longitude = outlet_lon, watershed_km2 = watershed_area) %>% 
+  mutate(watershed_km2 = base::round(watershed_km2, 2))
+
+head(watershed_info) #watershed area
+
+#Save the file if you want to
+write_csv(watershed_info, file = "Clean_Data/watershed_info.csv")
+```
+
+```{r}
+refelv_problem_catchments <- read_sf("Raw_Data/Shape_files/catchment_delineation/refelv_problem_catchments.shp") 
+
+refelv_problem_catchments$watershed_area <- set_units(st_area(refelv_problem_catchments), "km2")
+
+watershed_info = st_drop_geometry(refelv_problem_catchments)
+
+#Change the percentage/km2 to numeric format
+watershed_info$watershed_area <- as.numeric(watershed_info$watershed_area)
+
+#Select and rename columns that are interesting to keep
+watershed_info <- dplyr::select(watershed_info,site_id, watershed_km2 = watershed_area)
+
+head(watershed_info) #watershed area
+
+#Save the file if you want to
+write_csv(watershed_info, file = "Clean_Data/refelv_problem_catchments_info.csv")
+```
+
+
+# Lakes and rivers
+
+```{r}
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+water_main <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp") 
+Innsjo <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Innsjo_all.shp") 
+Vannkraft_dampoints <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_DamPunkt_all.shp") 
+
+
+tmap_mode(mode = c("view")) 
+
+tm <- tm_shape(watershed70) +
+        tm_borders() +
+      tm_shape(water_main) +
+        tm_lines(col = "#08519C") +
+      tm_shape(Innsjo) +
+        tm_polygons(col = "#08519C") +
+      tm_shape(Vannkraft_dampoints) +
+        tm_dots(col = "red") 
+
+tmap_save(tm, filename = "Figures/Refelv_shapes.html")
+```

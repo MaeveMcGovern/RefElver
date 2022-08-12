@@ -1,0 +1,66 @@
+# Water Chemistry {.unnumbered}
+
+::: panel-tabset
+### Physical
+
+![](Figures/Phys.jpeg){fig-align="center" width="80%"}
+
+### Ions
+
+![](Figures/Ions.jpeg){fig-align="center" width="80%"}
+
+
+### Metals
+
+![](Figures/Metals.jpeg){fig-align="center" width="85%"}
+
+
+### Aluminum
+
+![](Figures/Metals2.jpeg){fig-align="center" width="65%"}
+
+
+### Nutrients
+
+![](Figures/Nutrients.jpeg){fig-align="center" width="80%"}
+
+### Carbon
+
+![](Figures/Carbon.jpeg){fig-align="center" width="80%"}
+
+:::
+
+## Water Chemistry: Land Cover
+
+::: panel-tabset
+### Physical
+
+![](Figures/Phys_lc.jpeg){fig-align="center" width="80%"}
+
+
+### Ions
+
+![](Figures/Ions_lc.jpeg){fig-align="center" width="80%"}
+
+
+### Metals
+
+![](Figures/Metals_lc.jpeg){fig-align="center" width="85%"}
+
+
+### Aluminum
+
+![](Figures/Metals2_lc.jpeg){fig-align="center"}
+
+
+### Nutrients
+
+![](Figures/Nutrients_lc.jpeg){fig-align="center" width="85%"}
+
+
+### Carbon
+
+![](Figures/Carbon_lc.jpeg){fig-align="center" width="80%"}
+
+:::
+

@@ -1,0 +1,195 @@
+---
+title: "NIVA Reference Rivers: Drought Impacts"
+author: "Maeve McGovern, July 2022"
+format:
+  revealjs:
+    smaller: true
+    scrollable: true
+    slide-number: true
+editor: visual
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Watershed Slope and Elevation
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+```
+
+```{r}
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# river station coordinates
+stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
+stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+
+dem_all <- rast("Raw_Data/DEM/Output/dem_all.tif") 
+#Calculate slope from the cropped and joined DEM
+slope <- terrain(dem_all, v = "slope", neighbors = 8, unit = "degrees")
+
+# Downsample to reduce the size
+dem_proj <- terra::aggregate(dem_all, fact = 10)
+slope_proj <- terra::aggregate(slope, fact = 10)
+
+# Interactive map
+tmap_mode(mode = c("view")) # Set for interactive viewing. 
+cls <- c("blue", "lightblue", "#ffffff80") # Define color scheme
+
+tmap_options(check.and.fix = TRUE) 
+
+tm <- tm_shape(dem_proj) + 
+tm_raster(style = "cont", 
+          title = "elevation (m a.s.l)",
+          palette = "-Spectral", alpha = 0.9) + 
+tm_shape(slope_proj) +
+  tm_raster(alpha = 0.9, title='Slope - degrees') +
+tm_shape(watershed70) +
+  tm_borders() +
+tm_shape(stations_cord) +
+  tm_dots(id = "site_name")
+
+tm
+```
+
+Figure. Catchment elevation and slope plotted at a reduced resolution. Mean and gridded slope and elevation have been exported to csv (as well as catchment area). This can also be calculated for buffer zones and/or distance to the sampling station.
+
+## Land Cover
+
+```{r}
+# Land cover raster file (cleaned & prepped in other file)
+LandCover <- rast("Raw_Data/land_cover/land_cover_reclass.tif")
+
+# Plot the land cover data into an interactive map with a layer for each year. 
+tmap_mode(mode = c("view")) 
+
+# Land Cover in 2018
+tm <- tm_shape(LandCover) + 
+        tm_raster(breaks = c(21,23,24,25,27,29,31,32,34,36,41,44,45, 46),
+                  labels = c("Agriculture", "Broad-leaved forest", "Coniferous forest", "Mixed forest", 
+                             "Moors and heathland", "woodland-scrub", "Bare rocks",
+                             "Sparse vegetation","Glacier", 
+                             "Peat bogs","Water bodies", "Seawater", "Other"),
+                  palette = c("orange", "darkgreen", "darkolivegreen4", "darkolivegreen", 
+                              "coral3", "purple", "darkseagreen1", 
+                              "darkseagreen4", "white",
+                              "coral4", "#2171B5", "#08519C", "black"),
+                  title = "Land Cover") +
+      tm_shape(watershed70) +
+        tm_borders() +
+      tm_shape(stations_cord) + 
+         tm_dots() 
+tm
+```
+
+Figure. Corine land cover data (2018) reclassified to relevant land-cover categories. Exported to csv for the total catchment, but also possible to export for various 'buffer' zones calculated from NVE river shape file. Here the resolution is reduced for plotting.
+
+## Wetness
+
+```{r}
+water_main <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp") 
+wetness_finn <- rast("Raw_Data/land_cover/wetness/wetness_all.tif")
+wetness_proj <- terra::aggregate(wetness_finn, fact = 4)
+# 0 = dry
+# 1 = permanent water
+# 2 = Temporary water
+# 3 = Permanent wet
+# 4 = Temporary wet
+# 5 = seawater
+
+tmap_mode(mode = c("view")) 
+
+tm <- tm_shape(wetness_proj) + 
+        tm_raster(breaks = c(0,1,2,3,4,5,6), 
+        labels = c("dry", "permanent water", "temporary water", "permanent wetness", "temporary wetness", "no data"),
+        palette = c("white",  "#08519C", "#2171B5", "#4292C6", "#6BAED6", "black"),
+        title="Wetness") + 
+      tm_shape(water_main) +
+        tm_lines(col = "#08519C") +
+      tm_shape(watershed70) +
+        tm_borders() 
+      #tm_shape(water_main) +
+       # tm_lines(col = "#08519C") 
+tm
+```
+
+Figure. The combined Water and Wetness product (source: copernicus) showing the occurrence of water and wet surfaces over the period from 2012 to 2018 with defined classes of (1) permanent water, (2) temporary water, (3) permanent wetness and (4) temporary wetness. This information can be exported to csv for the total catchment and buffer zones to help classify and group the catchments.
+
+## Hydropower
+
+```{r}
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+water_main <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp") 
+Innsjo <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Innsjo_all.shp") 
+Vannkraft_dampoints <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Vannkraft_DamPunkt_all.shp") 
+
+
+tmap_mode(mode = c("view")) 
+
+tm <- tm_shape(watershed70) +
+        tm_borders() +
+      tm_shape(water_main) +
+        tm_lines(col = "#08519C") +
+      tm_shape(Innsjo) +
+        tm_polygons(col = "#08519C") +
+      tm_shape(Vannkraft_dampoints) +
+        tm_dots(col = "red") 
+
+tm
+```
+
+Figure. Main rivers and lakes (in blue) and locations of hydroelectric dams (in red).
+
+## Next Steps I: Catchment classification
+
+-   Classify the catchments both by catchment characteristics, but also by water chemistry.
+
+    -   Approach: Multivariate analysis of water chem & catchment characteristics (slope, elevation, area, land cover, wetness) for all years.
+
+        -   hypothesis: There is a simple way to classify the catchments to a smaller/more manageable number. Perhaps in terms of elevation, land cover, 'brownness' or 'vulnerability to drought' ?
+
+-   Classify the catchments/sampling years in terms of climate variables and drought index.
+
+    -   hypothesis: 2018 is a high drought year. This can be used in contrast to the other years. The drought index can also be used to identify a range or group of drought-impacted rivers.
+
+## Next Steps II: Drought impacts on water chemistry
+
+-   Differences between dry and wet years (hypotheses:)c
+
+    -   DOC/water color: Reduced following drought, and higher aromaticity of DOC. Also increased ions (ca, HCO3)
+
+        Heelen/Francois suggestions/discussion:
+
+    -   Temperature: extra high during droughts? But droughts can also increase the "groundwater" to surface water ratio with the former being much cooler. This has been observed in May-July 2018 at Langtjern (obviously this is headwater, rivers behave differently but we never know). And if the rivers are regulated, we could also see cooler rivers (hydropower discharge is usually coming from the hypolimnion of high-altitude lakes).
+
+    -   Nutrients: more retention in the river? given lower loads, the river will be more nutrient limited.
+
+    -   Acidity: acid pulse right after the drought? because of production of acidity (from oxidation of reduced S) during droughts, which will be flushed out post-drought.big enough to see in a river (with monthly water sampling?
+
+## Next Steps III: Catchment characteristics & influence on drought impacts.
+
+-   Differences between dry and wet years among land cover types:
+
+    -   hypothesis: Drought impacts water chemistry differently depending on elevation?, forest cover?, presense of bogs?, ect.
+
+-   Predictive power of catchment characteristics:
+
+    -   hypothesis: catchment and riparian zone characteristics have lower predictive power during drought years due to reduced connectivity.
+
+## Collaboration
+
+-   Need to discuss how to divide the work.
+-   Share files on github? (How do we handle larger files that do not fit on github?)

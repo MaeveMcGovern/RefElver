@@ -1,0 +1,48 @@
+# Introduction {.unnumbered}
+
+## Reference Rivers
+
+79 watersheds
+Water chemistry sampled monthly 2017-2022
+
+XX samples in 2018 & 2020
+XX sampled in 2019 & 2021
+4 samples in all years
+
+```{r}
+#| echo: false
+#| warning: false
+# Load libraries
+library(tidyverse)
+library(sf)
+library(terra)
+library(units)
+library(raster)
+library(rgeos)
+library(tmap)
+library(RColorBrewer)
+
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
+# river station coordinates
+stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
+stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+
+# Interactive map
+tmap_mode(mode = c("view")) # Set for interactive viewing. 
+
+tmap_options(check.and.fix = TRUE) 
+
+tm <- tm_shape(watershed70) + 
+   tm_borders() +
+  tm_shape(stations_cord) +
+    tm_dots(size = 0.05, id = "site_name")
+
+tm
+```
+
+
+
+
