@@ -1,6 +1,6 @@
 # Multivariate {.unnumbered}
 
-## Multivariate analysis: All Variables
+## All Variables
 
 ::: panel-tabset
 ### Catchment Characteristics

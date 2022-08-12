@@ -3,16 +3,16 @@ project:
   output-dir: docs
 
 book:
-  title: "Reference Rivers"
-  author: "Maeve McGovern"
+  title: "NIVA Reference Rivers"
   date: "August 9, 2022"
-  cover-image: cover.png
   chapters:
     - index.qmd
     - book_spatial.qmd
+    - book_climate.qmd
     - book_waterchem.qmd
     - book_multivariate.qmd
     - book_fluxes.qmd
+    - book_drought.qmd
 
 format:
   html:

@@ -1,9 +1,17 @@
 # Fluxes {.unnumbered}
 
-![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+::: panel-tabset
 
-
+### 2018/2020
 ![](Figures/Annual_Flux_18_20.jpeg){fig-align="center"}
 
+### 2019/2021
+![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+:::
 
+
+::: panel-tabset
+
+### DOC
 ![](Figures/daily_flux_v_Q_DOC.jpeg){fig-align="center"}
+:::

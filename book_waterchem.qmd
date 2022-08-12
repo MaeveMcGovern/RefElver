@@ -1,5 +1,6 @@
 # Water Chemistry {.unnumbered}
 
+## Elevation
 ::: panel-tabset
 ### Physical
 
@@ -30,7 +31,7 @@
 
 :::
 
-## Water Chemistry: Land Cover
+## Land Cover
 
 ::: panel-tabset
 ### Physical

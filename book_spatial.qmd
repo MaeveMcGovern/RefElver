@@ -1,7 +1,5 @@
 # Spatial datasets {.unnumbered}
 
-## Spatial Data
-
 ::: panel-tabset
 ### Example Watershed
 
@@ -15,7 +13,6 @@
 
 ![Slope calculated from the 10m DTM data](Figures/Example_Rasters_Map_slope.png){fig-align="center" width="80%"}
 
-
 ### Land Cover
 
 ![Corine land cover data from 2018 reclassified to relevant categories](Figures/Example_LandCover_2018.png){fig-align="center" width="90%"}
@@ -23,18 +20,6 @@
 ### Wetness
 
 ![The main Water and Wetness (WAW) product with defined classes of (1) permanent water, (2) temporary water, (3) permanent wetness and (4) temporary wetness. Source: Copernicus](Figures/Example_wetness_Map.png){fig-align="center" width="80%"}
-:::
-
-## Climate & Hydrology
-
-::: panel-tabset
-### Climate
-
-![Overview of raw climate data collected from all 79 catchments using NVE's Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).](Figures/Climate2.jpeg){fig-align="center" width="65%"}
-
-### Hydrology
-
-![Overview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = 'Avrenning' and gwb_sssrel = 'vannmetning i jord'. Is Avrenning = discharge (check unit?).](Figures/Hydro3.jpeg){fig-align="center" width="65%"}
 :::
 
 ## Catchment Characteristics
@@ -48,7 +33,7 @@
 
 ![](Figures/LanBar.jpeg){fig-align="center"}
 
-
 ### Land Cover-Drought
 
 ![](Figures/LanBar2.jpeg){fig-align="center"}
+:::

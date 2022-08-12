@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Reference Rivers - Spatial datasets</title>
+<title>NIVA Reference Rivers - Spatial datasets</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -38,7 +38,7 @@ ul.task-list{list-style: none;}
 }</script>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script><script src="site_libs/quarto-nav/headroom.min.js"></script><script src="site_libs/clipboard/clipboard.min.js"></script><script src="site_libs/quarto-search/autocomplete.umd.js"></script><script src="site_libs/quarto-search/fuse.min.js"></script><script src="site_libs/quarto-search/quarto-search.js"></script><meta name="quarto:offset" content="./"><link href="/book_waterchem.html" rel="next"><link href="/index.html" rel="prev"><script src="site_libs/quarto-html/quarto.js"></script><script src="site_libs/quarto-html/popper.min.js"></script><script src="site_libs/quarto-html/tippy.umd.min.js"></script><script src="site_libs/quarto-html/anchor.min.js"></script><link href="site_libs/quarto-html/tippy.css" rel="stylesheet"><link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><script src="site_libs/bootstrap/bootstrap.min.js"></script><link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet"><link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet"></head>
+<script src="site_libs/quarto-nav/quarto-nav.js"></script><script src="site_libs/quarto-nav/headroom.min.js"></script><script src="site_libs/clipboard/clipboard.min.js"></script><script src="site_libs/quarto-search/autocomplete.umd.js"></script><script src="site_libs/quarto-search/fuse.min.js"></script><script src="site_libs/quarto-search/quarto-search.js"></script><meta name="quarto:offset" content="./"><link href="/book_climate.html" rel="next"><link href="/index.html" rel="prev"><script src="site_libs/quarto-html/quarto.js"></script><script src="site_libs/quarto-html/popper.min.js"></script><script src="site_libs/quarto-html/tippy.umd.min.js"></script><script src="site_libs/quarto-html/anchor.min.js"></script><link href="site_libs/quarto-html/tippy.css" rel="stylesheet"><link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><script src="site_libs/bootstrap/bootstrap.min.js"></script><link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet"><link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet"></head>
 
 <body class="nav-sidebar floating">
 
@@ -59,7 +59,7 @@ ul.task-list{list-style: none;}
   <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">Reference Rivers</a> 
+      <a href="./">NIVA Reference Rivers</a> 
     </div>
       </div>
       <div class="mt-2 flex-shrink-0 align-items-center">
@@ -71,12 +71,17 @@ ul.task-list{list-style: none;}
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link">Introduction</a>
+  <a href="./index.html" class="sidebar-item-text sidebar-link">Overview</a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./book_spatial.html" class="sidebar-item-text sidebar-link active">Spatial datasets</a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./book_climate.html" class="sidebar-item-text sidebar-link">Climate &amp; Hydrology</a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -94,6 +99,11 @@ ul.task-list{list-style: none;}
   <a href="./book_fluxes.html" class="sidebar-item-text sidebar-link">Fluxes</a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./book_drought.html" class="sidebar-item-text sidebar-link">Drought</a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -103,13 +113,7 @@ ul.task-list{list-style: none;}
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#spatial-data" id="toc-spatial-data" class="nav-link active" data-scroll-target="#spatial-data">Spatial Data</a></li>
-  <li><a href="#climate-hydrology" id="toc-climate-hydrology" class="nav-link" data-scroll-target="#climate-hydrology">Climate &amp; Hydrology</a></li>
-  <li><a href="#catchment-characteristics" id="toc-catchment-characteristics" class="nav-link" data-scroll-target="#catchment-characteristics">Catchment Characteristics</a>
-  <ul class="collapse">
-  <li><a href="#land-cover-elevation" id="toc-land-cover-elevation" class="nav-link" data-scroll-target="#land-cover-elevation">Land Cover-Elevation</a></li>
-  <li><a href="#land-cover-drought" id="toc-land-cover-drought" class="nav-link" data-scroll-target="#land-cover-drought">Land Cover-Drought</a></li>
-  </ul></li>
+  <li><a href="#catchment-characteristics" id="toc-catchment-characteristics" class="nav-link active" data-scroll-target="#catchment-characteristics">Catchment Characteristics</a></li>
   </ul>
 </nav>
     </div>
@@ -132,8 +136,6 @@ ul.task-list{list-style: none;}
 
 </header>
 
-<section id="spatial-data" class="level2">
-<h2 class="anchored" data-anchor-id="spatial-data">Spatial Data</h2>
 <div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Example Watershed</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Elevation</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Slope</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false">Land Cover</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false">Wetness</a></li></ul>
 <div class="tab-content">
@@ -179,57 +181,36 @@ ul.task-list{list-style: none;}
 </div>
 </div>
 </div>
-</section>
-<section id="climate-hydrology" class="level2">
-<h2 class="anchored" data-anchor-id="climate-hydrology">Climate &amp; Hydrology</h2>
+<section id="catchment-characteristics" class="level2">
+<h2 class="anchored" data-anchor-id="catchment-characteristics">Catchment Characteristics</h2>
 <div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Climate</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Hydrology</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Physical characteristics</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Land Cover-Elevation</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-3" role="tab" aria-controls="tabset-2-3" aria-selected="false">Land Cover-Drought</a></li></ul>
 <div class="tab-content">
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="Figures/Climate2.jpeg" class="img-fluid figure-img" style="width:65.0%"></p>
-<p></p><figcaption aria-hidden="true" class="figure-caption">Overview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).</figcaption><p></p>
+<p><img src="Figures/Density.jpeg" class="img-fluid figure-img" style="width:85.0%"></p>
 </figure>
 </div>
 </div>
 <div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="Figures/Hydro3.jpeg" class="img-fluid figure-img" style="width:65.0%"></p>
-<p></p><figcaption aria-hidden="true" class="figure-caption">Overview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’. Is Avrenning = discharge (check unit?).</figcaption><p></p>
-</figure>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section id="catchment-characteristics" class="level2">
-<h2 class="anchored" data-anchor-id="catchment-characteristics">Catchment Characteristics</h2>
-<p>::: panel-tabset ### Physical characteristics</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="Figures/Density.jpeg" class="img-fluid figure-img" style="width:85.0%"></p>
-</figure>
-</div>
-<section id="land-cover-elevation" class="level3">
-<h3 class="anchored" data-anchor-id="land-cover-elevation">Land Cover-Elevation</h3>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
 <p><img src="Figures/LanBar.jpeg" class="img-fluid figure-img"></p>
 </figure>
 </div>
-</section>
-<section id="land-cover-drought" class="level3">
-<h3 class="anchored" data-anchor-id="land-cover-drought">Land Cover-Drought</h3>
+</div>
+<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="Figures/LanBar2.jpeg" class="img-fluid figure-img"></p>
 </figure>
 </div>
+</div>
+</div>
+</div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
@@ -315,12 +296,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./index.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Introduction</span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Overview</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./book_waterchem.html" class="pagination-link">
-        <span class="nav-page-text">Water Chemistry</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./book_climate.html" class="pagination-link">
+        <span class="nav-page-text">Climate &amp; Hydrology</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
