@@ -279,7 +279,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   filter(year %in% c("2019", "2021")) %>% 
   mutate(year = as.character(year)) %>% 
   ggplot(aes(x = okoregion, y = flux, fill = year)) +
-  geom_boxplot(outlier =  F,alpha = 0.7, width = 0.5) +
+  geom_boxplot(outlier.shape =  NA,alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#3399FF","#FFCC66")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
@@ -296,7 +296,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   filter(year %in% c("2018", "2020")) %>% 
   mutate(year = as.character(year)) %>% 
   ggplot(aes(x = okoregion, y = flux, fill = year)) +
-  geom_boxplot(outlier =  F, alpha = 0.7, width = 0.5) +
+  geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#FFCC66", "#3399FF")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
