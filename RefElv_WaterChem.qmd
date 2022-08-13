@@ -654,41 +654,10 @@ Plot <- Data %>%
   theme_bw() +
   xlab(NULL)
 
-ggsave("Figures/Ca.pdf", Plot7, width = 6, height = 6, bg = "white", device = cairo_pdf)
+ggsave("Figures/Ca.pdf", Plot, width = 6, height = 6, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/Ca.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Ca.jpeg")
 ```
 
-
-
-
-# Q/C Plots
-
-```{r}
-Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
-
-# Ca
-Data <- Water_Chem_Climate %>% 
-  mutate(year = year(Date)) %>% 
-  mutate(month = month(Date)) %>% 
-  mutate(day = day(Date)) %>% 
-  mutate(Date = make_date(month, day)) %>% 
-  filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, Q, Date, year,coniferous_forest, DOC_mg_L, NO3_ug_L, Ca_mg_L)) %>% 
-  pivot_longer(col = -c(site_id, Q, Date, year, coniferous_forest), values_to = "measurement", names_to = "Variable")
-
-
-Plot <- Data %>% 
-  ggplot(aes(x = log10(Q), y = log10(measurement), color = coniferous_forest)) + 
-  geom_point(size = 1.0) +
-  geom_smooth(method = "lm", se = T, color = "blue") +
-  facet_grid(Variable ~ year, labeller = label_parsed, scales = "free") +
-  theme_bw() +
-  xlab("log10(Q)") + ylab("log10(Concentration)")
-
-ggsave("Figures/Q_C.pdf", Plot, width = 6, height = 6, bg = "white", device = cairo_pdf)
-bitmap <- pdf_render_page("Figures/Q_C.pdf", page = 1, dpi = 300)
-jpeg::writeJPEG(bitmap, "Figures/Q_C.jpeg")
-```
 
 
