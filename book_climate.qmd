@@ -8,4 +8,8 @@
 ### Hydrology
 
 ![Overview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = 'Avrenning' and gwb_sssrel = 'vannmetning i jord'.](Figures/Hydro3.jpeg){fig-align="center" width="65%"}
+
+### Flow clusters
+
+![seasonal flow regimes grouped into 4 clusters](Figures/map_clusters2.jpeg){fig-align="center" width="75%"}
 :::

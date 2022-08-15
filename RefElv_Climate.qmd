@@ -559,11 +559,11 @@ jpeg::writeJPEG(bitmap, "Figures/Climate2.jpeg")
 Hydro_Plotter <- Climate %>%
   mutate(day = 1) %>% 
   mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
-  filter(grepl("Q|gwb_sssrel", par))  
+  filter(grepl("gwb_q|gwb_sssrel", par))  
 
 Hydro_Plotter$par <- factor(Hydro_Plotter$par, 
-                       levels = c("Q", "gwb_sssrel"),
-                       labels = c("Q", "mean gwb_sssrel (%)"))
+                       levels = c("gwb_q", "gwb_sssrel"),
+                       labels = c("gwb_q (mm)", "mean gwb_sssrel (%)"))
 
 Plot <- Hydro_Plotter %>%   
   ggplot(aes(x = Date, y = monthly_mean)) +

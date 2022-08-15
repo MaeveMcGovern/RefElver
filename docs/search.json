@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "NIVA Reference Rivers",
     "section": "",
-    "text": "79 watersheds all over Norway.\nMonthly water chemistry samples collected from 2017 to 2022 with targeted rivers switching every other year.\n\nSubset 1: XX rivers were sampled in 2018 & 2020\nSubset 2: XX rivers were sampled in 2019 & 2021\nSubset 3: 4 rivers were sampled in all years"
+    "text": "Monthly water chemistry samples collected from 2017 to 2022 with targeted rivers switching every other year.\nIn total, 79 watersheds were sampled all over Norway, of which:\n\n13 rivers were sampled in 2018 & 2020\n27 rivers were sampled in 2019 & 2021\n3 rivers were sampled in all years"
   },
   {
     "objectID": "book_spatial.html",
@@ -25,7 +25,7 @@
     "href": "book_climate.html",
     "title": "Climate & Hydrology",
     "section": "",
-    "text": "ClimateHydrology\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’."
+    "text": "ClimateHydrologyFlow clusters\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’.\n\n\n\n\n\n\n\nseasonal flow regimes grouped into 4 clusters"
   },
   {
     "objectID": "book_waterchem.html",
@@ -60,7 +60,7 @@
     "href": "book_fluxes.html",
     "title": "Fluxes",
     "section": "",
-    "text": "DOC"
+    "text": "More Info\n\n\n\nDOC"
   },
   {
     "objectID": "book_drought.html",
