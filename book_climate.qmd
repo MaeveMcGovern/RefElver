@@ -1,15 +1,41 @@
 # Climate & Hydrology {.unnumbered}
 
+## Climate
+
 ::: panel-tabset
-### Climate
+### All Data
 
 ![Overview of raw climate data collected from all 79 catchments using NVE's Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).](Figures/Climate2.jpeg){fig-align="center" width="65%"}
 
-### Hydrology
+### 2018/2020
+
+![Climate variables from rivers sampled in 2018 & 2020](Figures/Climate_18_20.jpeg){fig-align="center" width="60%"}
+
+### 2019/2021
+
+![Climate variables from rivers sampled in 2019 & 2021](Figures/Climate_19_21.jpeg){fig-align="center" width="60%"}
+
+### 2018/2019/2020/2021
+
+![Climate variables from rivers sampled in all four years (2018/2019/2020/2021)](Figures/Climate_ALL.jpeg){fig-align="center" width="60%"}
+:::
+
+## Hydrology
+
+::: panel-tabset
+### All Data
 
 ![Overview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = 'Avrenning' and gwb_sssrel = 'vannmetning i jord'.](Figures/Hydro3.jpeg){fig-align="center" width="65%"}
 
-### Flow clusters
+### 2018/2020
 
-![Figure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5).](Figures/map_clusters2.jpeg){fig-align="center" width="75%"}
+![Hydrologic variables from rivers sampled in 2018 & 2020](Figures/Hydrology_18_20.jpeg){fig-align="center" width="60%"}
+
+### 2019/2021
+
+![Hydrologic variables from rivers sampled in 2019 & 2021](Figures/Hydrology_19_21.jpeg){fig-align="center" width="60%"}
+
+### 2018/2019/2020/2021
+
+![Hydrologic variables from rivers sampled in all four years (2018/2019/2020/2021)](Figures/Hydrology_ALL.jpeg){fig-align="center" width="60%"}
 :::

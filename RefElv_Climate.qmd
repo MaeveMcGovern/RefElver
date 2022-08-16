@@ -5,9 +5,7 @@ execute:
   echo: false
 ---
 
-# Processing of climate datafrom Jupyterhub 
-
-Files are processed and saved as Land_Cover, Climate_Data (temp & precip) and Drought_Data (drought index & discharge). 
+# Figures made for climate & hydrology
 
 ```{r}
 knitr::opts_chunk$set(echo=F, message=F, warning=F)
@@ -23,483 +21,6 @@ library(tmap)
 library(lubridate)
 library(jpeg)
 library(pdftools)
-```
-
-
-```{r}
-# Load data
-
-# Delineated watersheds
-watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") %>% 
-   mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
-   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
-
-# river station coordinates
-stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
-stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
-stations_cord = st_transform(stations_cord, "EPSG:25833")
-
-# Station info
-Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
-   mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
-   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
-```
-
-
-
-# write shape files for Jupyterhub
-
-```{r}
-#| eval: false
-
-# Site_id: 1-10
-watershed70_1_10 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("1", "2", "3", "4","5", "6", "7", "8", "9", "10"))
-
-st_write(watershed70_1_10, "Raw_Data/Shape_files/catchment_delineation/watershed70_1_10.shp")
-
-
-# Site_id: 11-20
-watershed70_11_20 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("11", "12", "13", "14","15","16","17","18","19","20"))
-
-st_write(watershed70_11_20, "Raw_Data/Shape_files/catchment_delineation/watershed70_11_20.shp")
-
-# Site_id: 21-30
-watershed70_21_30 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("21", "22", "23", "24","25","26","27","28","29","30"))
-
-st_write(watershed70_21_30, "Raw_Data/Shape_files/catchment_delineation/watershed70_21_30.shp")
-
-
-# Site_id: 31-40
-watershed70_31_40 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("31", "32", "33", "34","35","36","37","38","39","40"))
-
-st_write(watershed70_31_40, "Raw_Data/Shape_files/catchment_delineation/watershed70_31_40.shp")
-
-
-# Site_id: 41-50
-watershed70_41_50 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("41", "42", "43", "44","45","46","47","48","49","50"))
-
-st_write(watershed70_41_50, "Raw_Data/Shape_files/catchment_delineation/watershed70_41_50.shp")
-
-
-# Site_id: 51-60
-watershed70_51_60 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("51", "52", "53", "54","55","56","57","58","59","60"))
-
-st_write(watershed70_51_60, "Raw_Data/Shape_files/catchment_delineation/watershed70_51_60.shp")
-
-# Site_id: 61-70
-watershed70_61_70 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("61", "62", "63", "64","65","66","67","68","69","70"))
-
-st_write(watershed70_61_70, "Raw_Data/Shape_files/catchment_delineation/watershed70_61_70.shp")
-
-
-# Site_id: 71-79
-watershed70_71_79 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("71", "72", "73", "74","75","76","77","78","79"))
-
-st_write(watershed70_71_79, "Raw_Data/Shape_files/catchment_delineation/watershed70_71_79.shp")
-```
-
-```{r}
-# Troublemakers for climate data extraction
-# Site_id: 11-15
-watershed70_11_15 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("11", "12", "13", "14","15"))
-
-st_write(watershed70_11_15, "Raw_Data/Shape_files/catchment_delineation/watershed70_11_15.shp")
-
-
-# Site_id: 16-17
-watershed70_16_17 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("16","17"))
-
-st_write(watershed70_16_17, "Raw_Data/Shape_files/catchment_delineation/watershed70_16_17.shp")
-
-# Site_id: 18
-watershed70_18 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("18"))
-
-st_write(watershed70_18, "Raw_Data/Shape_files/catchment_delineation/watershed70_18.shp")
-
-# Site_id: 19
-watershed70_19 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("19"))
-
-st_write(watershed70_19, "Raw_Data/Shape_files/catchment_delineation/watershed70_19.shp")
-
-# Site_id: 20
-watershed70_20 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("20"))
-
-st_write(watershed70_20, "Raw_Data/Shape_files/catchment_delineation/watershed70_20.shp")
-
-
-# Site_id: 41-42
-watershed70_41_42 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("41", "42"))
-
-st_write(watershed70_41_42, "Raw_Data/Shape_files/catchment_delineation/watershed70_41_42.shp")
-
-# Site_id: 43
-watershed70_43 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("43"))
-
-st_write(watershed70_43, "Raw_Data/Shape_files/catchment_delineation/watershed70_43.shp")
-
-# Site_id: 44
-watershed70_44 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("44"))
-
-st_write(watershed70_44, "Raw_Data/Shape_files/catchment_delineation/watershed70_44.shp")
-
-
-# Site_id: 45
-watershed70_45 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("45"))
-
-st_write(watershed70_45, "Raw_Data/Shape_files/catchment_delineation/watershed70_45.shp")
-
-# Site_id: 46-50
-watershed70_46_50 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("46","47","48","49","50"))
-
-st_write(watershed70_46_50, "Raw_Data/Shape_files/catchment_delineation/watershed70_46_50.shp")
-```
-
-```{r}
-
-watershed70_noProblem <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(!site_id %in% c("1","2", "12", "28"))
-
-st_write(watershed70_noProblem, "Raw_Data/Shape_files/catchment_delineation/watershed70_noProblem.shp")
-
-
-# Troublemakers for Drought indices. 
-
-# Site_id: 1-2
-watershed70_1 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("1"))
-
-st_write(watershed70_1, "Raw_Data/Shape_files/catchment_delineation/watershed70_1.shp")
-
-# Site_id: 1-2
-watershed70_2 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("2"))
-
-st_write(watershed70_2, "Raw_Data/Shape_files/catchment_delineation/watershed70_2.shp")
-
-
-# Site_id: 3-5
-watershed70_3_5 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("3", "4","5"))
-
-st_write(watershed70_3_5, "Raw_Data/Shape_files/catchment_delineation/watershed70_3_5.shp")
-
-
-# Site_id: 6-10
-watershed70_6_10 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("6","7","8","9","10"))
-
-st_write(watershed70_6_10, "Raw_Data/Shape_files/catchment_delineation/watershed70_6_10.shp")
-
-# Site_id: 11
-watershed70_11 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("11"))
-
-st_write(watershed70_11, "Raw_Data/Shape_files/catchment_delineation/watershed70_11.shp")
-
-# Site_id: 12
-watershed70_12 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("12"))
-
-st_write(watershed70_12, "Raw_Data/Shape_files/catchment_delineation/watershed70_12.shp")
-
-# Site_id: 13
-watershed70_13 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("13"))
-
-st_write(watershed70_13, "Raw_Data/Shape_files/catchment_delineation/watershed70_13.shp")
-
-# Site_id: 14
-watershed70_14 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("14"))
-
-st_write(watershed70_14, "Raw_Data/Shape_files/catchment_delineation/watershed70_14.shp")
-
-# Site_id: 6-10
-watershed70_15 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("15"))
-
-st_write(watershed70_15, "Raw_Data/Shape_files/catchment_delineation/watershed70_15.shp")
-
-
-# Site_id: 21-25
-watershed70_21_25 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("21","22","23","24","25"))
-
-st_write(watershed70_21_25, "Raw_Data/Shape_files/catchment_delineation/watershed70_21_25.shp")
-
-# Site_id: 26
-watershed70_26 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("26"))
-
-st_write(watershed70_26, "Raw_Data/Shape_files/catchment_delineation/watershed70_26.shp")
-
-# Site_id: 27
-watershed70_27 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("27"))
-
-st_write(watershed70_27, "Raw_Data/Shape_files/catchment_delineation/watershed70_27.shp")
-
-# Site_id: 28
-watershed70_28 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("28"))
-
-st_write(watershed70_28, "Raw_Data/Shape_files/catchment_delineation/watershed70_28.shp")
-
-# Site_id: 29-30
-watershed70_29_30 <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("29","30"))
-
-st_write(watershed70_29_30, "Raw_Data/Shape_files/catchment_delineation/watershed70_29_30.shp")
-
-
-
-# Problematic Catchments to James
-refelv_problem_catchments <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, geometry)) %>% 
-  rename("site_id" = "site_id2") %>% 
-  filter(site_id %in% c("1","2","12","28"))
-
-st_write(refelv_problem_catchments, "Raw_Data/Shape_files/catchment_delineation/refelv_problem_catchments.shp")
-
-```
-
-
-
-
-# Temperature & Precipitation data
-
-```{r}
-# rr = average daily precipitation 
-# tm = average daily temperature 
-
-# Catchment averages from 2010-2021
-Cwatershed70 <- list.files(path = "Raw_Data/Climate_Data/Gridded/", 
-                       pattern = "*.csv", full.names = TRUE) %>% 
-  lapply(read_csv) %>%                              
-  reduce(full_join) %>% 
-  rename("site_id2" = "site_id") %>% 
-  mutate(site_id2 = as.character(site_id2))
-
-watershed <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, site_id, site_name, geometry)) 
-
-Climate_Data <- full_join(watershed,Cwatershed70)
-```
-
-
-# Drought Index & Discharge
-
-```{r}
-# gwb_q = discharge
-# gwb_sssrel = drought index. “vannmetning i jord (%)” Palmer drought index 
-
-# Catchment averages from 2010-2021
-
-Drought70 <- list.files(path = "Raw_Data/Drought_Data/", 
-                       pattern = "*.csv", full.names = TRUE) %>% 
-  lapply(read_csv) %>%                              
-  reduce(full_join) %>% 
-  rename("site_id2" = "site_id") %>% 
-  mutate(site_id2 = as.character(site_id2))
-
-watershed <- watershed70 %>% 
-  mutate(site_id2 = as.character(row_number())) %>% distinct() %>% 
-  dplyr::select(c(site_id2, site_id, site_name, geometry)) 
-
-Drought_Data2 <- full_join(watershed,Drought70) %>% 
-  mutate(datetime = ymd_hms(datetime)) %>%
-  mutate(year = year(datetime), month = month(datetime, label = TRUE), day = day(datetime)) %>%
-  filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022"))  %>% 
-  mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
-  mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
- 
-st_geometry(Drought_Data2) <- NULL
-
-# Discharge calculation to get volume (multiply by catchment area). 
-Discharge_calc <- full_join(Drought_Data2, Station_Info) %>% 
-  dplyr::select(site_id, par, datetime, area_km2, value_min, value_median, value_max, value_max, value_mean) %>% 
-  filter(par == "gwb_q") %>% 
-  group_by(site_id, datetime) %>% 
-  mutate(value_mean2 = value_mean * area_km2) %>% 
-  mutate(value_min2 = value_min * area_km2) %>% 
-  mutate(value_max2 = value_max * area_km2) %>% 
-  mutate(value_median2 = value_median * area_km2) %>% 
-  mutate(par = "Q") %>% 
-  mutate(full_name = "Discharge") %>% 
-  mutate(unit = "mm_m3_day") %>% 
-  mutate(time_resolution = 1440) %>% 
-  dplyr::select(site_id, datetime, par, full_name, unit, time_resolution, value_mean = value_mean2, value_min = value_min2, value_max = value_max2, value_median = value_median2) %>% 
-  mutate(year = year(datetime), month = month(datetime, label = TRUE), day = day(datetime))
-  
-Drought_Data <- full_join(Drought_Data2, Discharge_calc) %>% 
-    dplyr::select(site_id, datetime,  year, month, day, par, full_name, unit, time_resolution, value_min, value_median, value_max, value_mean)
-
-write_csv(Drought_Data, file = "Clean_Data/Intermediate/Drought_Data_daily.csv")
-```
-
-
-
-```{r}
-#Units
-# gwb_q = mm
-# gwb_sssrel = %
-
-W2 <- Climate_Data %>% 
-  drop_na(par) %>% 
-  mutate(datetime = ymd_hms(datetime)) %>%
-  mutate(year = year(datetime),month = month(datetime, label = TRUE), day = day(datetime)) %>%
-  filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022")) %>% 
-  dplyr::select(c(site_id, par, full_name, unit, year, month, day, value_min, value_max, value_mean)) %>% 
-  group_by(site_id, par, full_name, unit, year, month) %>% 
-  summarise(day = day, 
-            monthly_sum = sum(value_mean, na.rm = TRUE), 
-            monthly_mean = mean(value_mean, na.rm = TRUE),
-            monthly_min = min(value_min, na.rm = TRUE),
-            monthly_max = max(value_max, na.rm = TRUE),
-            monthly_std = sd(value_mean, na.rm = TRUE))
-
-W <- Drought_Data %>% 
-  drop_na(par) %>% 
-  mutate(datetime = ymd_hms(datetime)) %>%
-  mutate(year = year(datetime),month = month(datetime, label = TRUE), day = day(datetime)) %>%
-  filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022")) %>% 
-  dplyr::select(c(site_id, year, month, day, par, full_name, unit, value_min, value_max, value_mean)) %>% 
-  group_by(site_id, par, full_name, unit, year, month) %>% 
-  summarise(day = day, 
-            monthly_sum = sum(value_mean, na.rm = TRUE),
-            monthly_mean = mean(value_mean, na.rm = TRUE),
-            monthly_min = min(value_min, na.rm = TRUE),
-            monthly_max = max(value_max, na.rm = TRUE),
-            monthly_std = sd(value_mean, na.rm = TRUE))
-
-Catchment_Climate <- full_join(W2, W)
-
-# All catchments together (catchment means..monthly means)
-Catchment_Climate %>%
-  ggplot(aes(x = month, y = monthly_mean)) +
-  geom_point() +
-  facet_grid(par~year, scales = "free")
-
-write_csv(Catchment_Climate, file = "Clean_Data/Intermediate/Climate_Data.csv") 
 ```
 
 
@@ -520,7 +41,6 @@ watershed_fdro <- Catchment_Climate %>% filter(par == "gwb_sssrel") %>%
 
 watershed700 <- full_join(watershed70, watershed_fdro)
 
-
 # Plot Figure
 tmap_mode(mode = c("view")) # Set for interactive viewing. 
 tmap_options(check.and.fix = TRUE)  # for error. 
@@ -530,22 +50,24 @@ tm <- tm_shape(watershed700) +
 				title=c("2017", "2018", "2019", "2020"), legend.show = FALSE) +
   tm_facets(as.layers = T)
 
-
 tm
 ## save an image ("plot" mode)
 tmap_save(tm, filename = "Figures/Catchments_drought.html")
-
 ```
 
+
+# Climate & Hydrology : All Rivers over all years
 ```{r}
-Climate <- read_csv("Clean_Data/Intermediate/Climate_Data.csv")
+Climate <- read_csv("Clean_Data/Intermediate/Climate_processed.csv")
 
 # Climate
 Climate_Plotter <- Climate %>% 
-  mutate(monthly_mean = ifelse(grepl("rr", par), monthly_sum, monthly_mean)) %>% 
+  pivot_longer(cols = -c(site_id, Date), names_to = "par", values_to = "monthly_mean") %>% 
+  filter(grepl("rr|tm", par)) %>% 
+  mutate(year = year(Date),month = month(Date, label = TRUE), day = day(Date)) %>%
   mutate(day = 1) %>% 
   mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
-  filter(grepl("rr|tm", par))  
+  distinct()
 
 Climate_Plotter$par <- factor(Climate_Plotter$par, 
                        levels = c("tm", "rr"),
@@ -566,9 +88,12 @@ jpeg::writeJPEG(bitmap, "Figures/Climate2.jpeg")
 
 # Hydrology
 Hydro_Plotter <- Climate %>%
+  pivot_longer(cols = -c(site_id, Date), names_to = "par", values_to = "monthly_mean") %>% 
+  filter(grepl("gwb_q|gwb_sssrel", par)) %>% 
+  mutate(year = year(Date),month = month(Date, label = TRUE), day = day(Date)) %>%
   mutate(day = 1) %>% 
   mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
-  filter(grepl("gwb_q|gwb_sssrel", par))  
+  distinct()
 
 Hydro_Plotter$par <- factor(Hydro_Plotter$par, 
                        levels = c("gwb_q", "gwb_sssrel"),
@@ -587,25 +112,150 @@ bitmap <- pdf_render_page("Figures/Hydro3.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Hydro3.jpeg")
 ```
 
-
+# Climate by groupings
 ```{r}
-Climate <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
-  mutate(monthly_mean = ifelse(grepl("rr", par), monthly_sum, monthly_mean)) %>% 
-  mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
-  dplyr::select(c(site_id, par, Date, monthly_mean)) %>% 
-  pivot_wider(names_from = par, values_from = monthly_mean) %>% 
-  mutate(site_id = str_replace_all(site_id, "-", "_"),
-          site_id = str_replace_all(site_id, " ", ""),
-         site_id = str_replace_all(site_id, "ø", "o"),
-         site_id = str_replace_all(site_id, "å", "a"),
-         site_id = str_replace_all(site_id, "Små", "Sma"),
-         site_id = str_replace_all(site_id, "á", "a"),
-         site_id = str_replace_all(site_id, "æ", "ae"),
-         site_id = str_replace_all(site_id, "Å", "A"),
-         site_id = str_replace_all(site_id, "Ø", "O"),
-         site_id = str_replace_all(site_id, "Æ", "AE"), 
-         site_id = str_replace_all(site_id, "S_021_1187_VesB", "S_021_1187_Ves"),
-         site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei"))
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
 
-write_csv(Climate, file = "Clean_Data/Intermediate/Climate_processed.csv")
+
+Climate_Plotter_Groups <- full_join(Climate_Plotter,Ecoregions)
+
+
+# 2018/2020
+Climate_Plotter_18_20 <- full_join(Climate_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot1 <- Climate_Plotter_18_20 %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#FFCC66","#264EFF")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Climate_18_20.pdf", Plot1, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Climate_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Climate_18_20.jpeg")
+
+
+# 2019/2021
+Climate_Plotter_19_21 <- full_join(Climate_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot2 <- Climate_Plotter_19_21 %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Climate_19_21.pdf", Plot2, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Climate_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Climate_19_21.jpeg")
+
+
+# 2018/19/20/21
+Climate_Plotter_ALL <- full_join(Climate_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot3 <- Climate_Plotter_ALL %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Climate_ALL.pdf", Plot3, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Climate_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Climate_ALL.jpeg")
+```
+
+
+# Hydrology by groupings
+```{r}
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+
+Hydro_Plotter_Groups <- full_join(Hydro_Plotter,Ecoregions)
+
+# 2018/2020
+Hydro_Plotter_18_20 <- full_join(Hydro_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot1 <- Hydro_Plotter_18_20 %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#FFCC66","#264EFF")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Hydrology_18_20.pdf", Plot1, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Hydrology_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Hydrology_18_20.jpeg")
+
+
+# 2019/2021
+Hydro_Plotter_19_21 <- full_join(Hydro_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot2 <- Hydro_Plotter_19_21 %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Hydrology_19_21.pdf", Plot2, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Hydrology_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Hydrology_19_21.jpeg")
+
+
+# 2018/19/20/21
+Hydro_Plotter_ALL <- full_join(Hydro_Plotter,Ecoregions) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
+
+Plot3 <- Hydro_Plotter_ALL %>%   
+  ggplot(aes(x = month, y = monthly_mean, group = factor(year), color = factor(year))) +
+  geom_point(size = 0.1, alpha= 0.3) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  geom_smooth(method = "gam", se = F) + 
+  ylab("Estimate") + xlab(NULL) +
+  facet_wrap(~par, scales = "free", ncol = 1) +
+  theme_bw() + labs(color ="year")
+
+ggsave("Figures/Hydrology_ALL.pdf", Plot3, width = 5, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Hydrology_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Hydrology_ALL.jpeg")
 ```

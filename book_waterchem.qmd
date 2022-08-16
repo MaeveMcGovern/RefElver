@@ -1,67 +1,81 @@
 # Water Chemistry {.unnumbered}
 
-## Elevation
-::: panel-tabset
-### Physical
-
-![](Figures/Phys.jpeg){fig-align="center" width="80%"}
-
-### Ions
-
-![](Figures/Ions.jpeg){fig-align="center" width="80%"}
-
-
-### Metals
-
-![](Figures/Metals.jpeg){fig-align="center" width="85%"}
-
-
-### Aluminum
-
-![](Figures/Metals2.jpeg){fig-align="center" width="65%"}
-
-
-### Nutrients
-
-![](Figures/Nutrients.jpeg){fig-align="center" width="80%"}
-
-### Carbon
-
-![](Figures/Carbon.jpeg){fig-align="center" width="80%"}
-
-:::
-
-## Land Cover
+## Physical
 
 ::: panel-tabset
-### Physical
+### 2018/2020
 
-![](Figures/Phys_lc.jpeg){fig-align="center" width="80%"}
+![](Figures/Phys_18_20.jpeg){fig-align="center" width="80%"}
 
+### 2019/2021
 
-### Ions
+![](Figures/Phys_19_21.jpeg){fig-align="center" width="80%"}
 
-![](Figures/Ions_lc.jpeg){fig-align="center" width="80%"}
+### 2018/2019/2020/2021
 
-
-### Metals
-
-![](Figures/Metals_lc.jpeg){fig-align="center" width="85%"}
-
-
-### Aluminum
-
-![](Figures/Metals2_lc.jpeg){fig-align="center"}
-
-
-### Nutrients
-
-![](Figures/Nutrients_lc.jpeg){fig-align="center" width="85%"}
-
-
-### Carbon
-
-![](Figures/Carbon_lc.jpeg){fig-align="center" width="80%"}
-
+![](Figures/Phys_ALL.jpeg){fig-align="center" width="85%"}
 :::
 
+## Ions
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/Ions_18_20.jpeg){fig-align="center" width="65%"}
+
+### 2019/2021
+
+![](Figures/Ions_19_21.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/ions_ALL.jpeg){fig-align="center" width="80%"}
+:::
+
+## Aluminium & Iron
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/Metals2_18_20.jpeg){fig-align="center" width="65%"}
+
+### 2019/2021
+
+![](Figures/Metals2_19_21.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Metals2_ALL.jpeg){fig-align="center" width="80%"}
+:::
+
+## Nutrients
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/Nutrients_18_20.jpeg){fig-align="center" width="65%"}
+
+### 2019/2021
+
+![](Figures/Nutrients_19_21.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Nutrients_ALL.jpeg){fig-align="center" width="80%"}
+:::
+
+## Carbon
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/Carbon_18_20.jpeg){fig-align="center" width="65%"}
+
+### 2019/2021
+
+![](Figures/Carbon_19_21.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Carbon_ALL.jpeg){fig-align="center" width="80%"}
+:::

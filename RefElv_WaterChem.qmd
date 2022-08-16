@@ -198,11 +198,653 @@ jpeg::writeJPEG(bitmap, "Figures/Carbon_sites.jpeg")
 
 
 
-# Raw Plots of Water Chemistry 
+# Water Chemistry by Groups color = Ecoregion
+
+## Physical
 
 ```{r}
-names(Water_Chem_Climate)
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+
+# Phys: 2018/2020
+Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Plot1 <- Phys %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Phys_18_20.pdf", Plot1, width = 6.2, height = 10, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys_18_20.jpeg")
+
+
+# Phys: 2019/2021
+
+Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Phys$okoregion <- factor(Phys$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge-ytre"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Phys %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Phys_19_21.pdf", Plot2, width = 6.5, height = 10, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys_19_21.jpeg")
+
+
+# Phys: 2018/2019/2020/2021
+
+Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Phys$Variable <- factor(Phys$Variable,
+                        levels = c("Temp_C", "Turbidity", "Conductivity_mS_m", "pH", 
+                 "Water_Color_mgPt_l", "Alkalinity_mmol_L", "ANC_µEkv_L"),
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('Turbidity'~ (NTU)),
+                                   bquote('Conductivity'~ (mS~m^-1)),
+                                   bquote('pH'),
+                                   bquote('Water Color'~ (mgPt~L^-1)),
+                                   bquote('Alkalinity'~ (mmol~L^-1)),             
+                                   bquote('ANC'~ (µEkv~L^-1))))
+
+Plot3 <- Phys %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Phys_ALL.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Phys_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Phys_ALL.jpeg")
+```
+
+
+## Metals2
+```{r}
+#Metals2
+
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+# Metals2: 2018/2020
+Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", 
+                                   "Al_l_ug_L", "Al_r_ug_L", "Fe_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1)),
+                                   bquote('Fe'~ (μg~L^-1))))
+
+
+Plot1 <- Metals2 %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Metals2_18_20.pdf", Plot1, width = 6.2, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2_18_20.jpeg")
+
+
+# Metals: 2019/2021
+
+Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", 
+                                   "Al_l_ug_L", "Al_r_ug_L", "Fe_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1)),
+                                   bquote('Fe'~ (μg~L^-1))))
+
+Metals2$okoregion <- factor(Metals2$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge-ytre"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Metals2 %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Metals2_19_21.pdf", Plot2, width = 6.5, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2_19_21.jpeg")
+
+
+# Metals: 2018/2019/2020/2021
+
+Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Metals2$Variable <- factor(Metals2$Variable,
+                        levels = c("Al_ug_L", "Al_il_ug_L", 
+                                   "Al_l_ug_L", "Al_r_ug_L", "Fe_ug_L"),
+                        labels = c(bquote('Al'~ (μg~L^-1)),
+                                   bquote('Al- ikke labil'~ (μg~L^-1)),
+                                   bquote('Al - labil'~ (μg~L^-1)),
+                                   bquote('Al - reactive'~ (μg~L^-1)),
+                                   bquote('Fe'~ (μg~L^-1))))
+Plot3 <- Metals2 %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Metals2_ALL.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Metals2_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Metals2_ALL.jpeg")
+```
+
+
+## Ions
+
+```{r}
+# Ions
+
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+# Ions: 2018/2020
+Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+
+Plot1 <- Ions %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Ions_18_20.pdf", Plot1, width = 6.2, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions_18_20.jpeg")
+
+
+# Ions 2019/2021
+
+Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+Ions$okoregion <- factor(Ions$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge-ytre"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Ions %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Ions_19_21.pdf", Plot2, width = 6.5, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions_19_21.jpeg")
+
+
+# Ions: 2018/2019/2020/2021
+
+Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Ions$Variable <- factor(Ions$Variable,
+                        levels = c("Mg_mg_L", "K_mg_L", "Ca_mg_L", "SO4_mg_L", "Na_mg_L"),
+                        labels = c(bquote('Mg'~ (mg~L^-1)),
+                                   bquote('K'~ (mg~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1)),
+                                   bquote('SO'[4]~ (mg~L^-1)),
+                                   bquote('Na'~ (mg~L^-1))))
+
+Plot3 <- Ions %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Ions_ALL.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Ions_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Ions_ALL.jpeg")
+```
+
+
+
+## Nutrients
+```{r}
+# Nutrients
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+# Nutrients: 2018/2020
+Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "PO4_ug_L", 
+                                   "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+
+
+Plot1 <- Nutrients %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Nutrients_18_20.pdf", Plot1, width = 6.2, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients_18_20.jpeg")
+
+
+# Nutrients 2019/2021
+
+Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", 
+                                   "PO4_ug_L", "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+
+Nutrients$okoregion <- factor(Nutrients$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge-ytre"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Nutrients %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Nutrients_19_21.pdf", Plot2, width = 6.5, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients_19_21.jpeg")
+
+
+# Nutrients: 2018/2019/2020/2021
+
+Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Nutrients$Variable <- factor(Nutrients$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", 
+                                   "PO4_ug_L", "NO3_ug_L", "SiO2_mg_L"),
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)),
+                                   bquote('PO'[4]~ (μg~L^-1)),
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   bquote('SiO'[2]~ (mg~L^-1))))
+
+Plot3 <- Nutrients %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Nutrients_ALL.pdf", Plot3, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Nutrients_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Nutrients_ALL.jpeg")
+```
+
+
+
+## Carbon
+```{r}
+# Carbon
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+
+# Carbon: 2018/2020
+Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Plot1 <- Carbon %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Carbon_18_20.pdf", Plot1, width = 6.2, height = 3, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_18_20.jpeg")
+
+
+# Carbon 2019/2021
+
+Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Carbon$okoregion <- factor(Carbon$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge-ytre"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Carbon %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Carbon_19_21.pdf", Plot2, width = 6.5, height = 3, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_19_21.jpeg")
+
+
+# Carbon: 2018/2019/2020/2021
+
+Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
+                          labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                     bquote('TOC'~ (mg~L^-1))))
+
+Plot3 <- Carbon %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Carbon_ALL.pdf", Plot3, width = 7, height = 2.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Carbon_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Carbon_ALL.jpeg")
+```
+
+
+
+
+# Water Chemistry by Elevation
+
+```{r}
 #Phys
+
 Phys <- Water_Chem_Climate %>% 
   dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, 
                   Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
@@ -236,7 +878,9 @@ ggsave("Figures/Phys.pdf", Plot1, width = 9, height = 5.5, bg = "white", device 
 bitmap <- pdf_render_page("Figures/Phys.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Phys.jpeg")
 
-#Metals
+
+
+# Metals
 Metals <- Water_Chem_Climate %>% 
   dplyr::select(c(site_id, Date, mean_elevation, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L)) %>% 
   pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement")  %>%
@@ -267,6 +911,7 @@ Plot2 <- Metals %>%
 ggsave("Figures/Metals.pdf", Plot2, width = 9, height = 5.5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/Metals.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Metals.jpeg")
+
 
 
 #Metals
@@ -384,8 +1029,7 @@ bitmap <- pdf_render_page("Figures/Carbon.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Carbon.jpeg")
 ```
 
-
-# Waterchem colors by and cover groupings. 
+# Waterchem colors by Land Cover Groupings. 
 ```{r}
 names(Water_Chem_Climate)
 #Phys

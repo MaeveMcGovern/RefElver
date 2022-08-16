@@ -25,14 +25,14 @@
     "href": "book_climate.html",
     "title": "Climate & Hydrology",
     "section": "",
-    "text": "ClimateHydrologyFlow clusters\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’.\n\n\n\n\n\n\n\nFigure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5)."
+    "text": "All Data2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nClimate variables from rivers sampled in 2018 & 2020\n\n\n\n\n\n\n\nClimate variables from rivers sampled in 2019 & 2021\n\n\n\n\n\n\n\nClimate variables from rivers sampled in all four years (2018/2019/2020/2021)"
   },
   {
     "objectID": "book_waterchem.html",
     "href": "book_waterchem.html",
     "title": "Water Chemistry",
     "section": "",
-    "text": "PhysicalIonsMetalsAluminumNutrientsCarbon"
+    "text": "2018/20202019/20212018/2019/2020/2021"
   },
   {
     "objectID": "book_waterchem.html#land-cover",
@@ -75,5 +75,40 @@
     "title": "Fluxes",
     "section": "Fluxes",
     "text": "Fluxes\n\n2018/20202019/2021\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nMore Info"
+  },
+  {
+    "objectID": "book_climate.html#hydrology",
+    "href": "book_climate.html#hydrology",
+    "title": "Climate & Hydrology",
+    "section": "Hydrology",
+    "text": "Hydrology\n\nAll Data2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’.\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in 2018 & 2020\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in 2019 & 2021\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in all four years (2018/2019/2020/2021)"
+  },
+  {
+    "objectID": "book_waterchem.html#ions",
+    "href": "book_waterchem.html#ions",
+    "title": "Water Chemistry",
+    "section": "Ions",
+    "text": "Ions\n\n2018/20202019/20212018/2019/2020/2021"
+  },
+  {
+    "objectID": "book_waterchem.html#aluminium-iron",
+    "href": "book_waterchem.html#aluminium-iron",
+    "title": "Water Chemistry",
+    "section": "Aluminium & Iron",
+    "text": "Aluminium & Iron\n\n2018/20202019/20212018/2019/2020/2021"
+  },
+  {
+    "objectID": "book_waterchem.html#nutrients",
+    "href": "book_waterchem.html#nutrients",
+    "title": "Water Chemistry",
+    "section": "Nutrients",
+    "text": "Nutrients\n\n2018/20202019/20212018/2019/2020/2021"
+  },
+  {
+    "objectID": "book_waterchem.html#carbon",
+    "href": "book_waterchem.html#carbon",
+    "title": "Water Chemistry",
+    "section": "Carbon",
+    "text": "Carbon\n\n2018/20202019/20212018/2019/2020/2021"
   }
 ]
