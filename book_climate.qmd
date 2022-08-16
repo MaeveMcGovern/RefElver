@@ -11,5 +11,5 @@
 
 ### Flow clusters
 
-![seasonal flow regimes grouped into 4 clusters](Figures/map_clusters2.jpeg){fig-align="center" width="75%"}
+![Figure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5).](Figures/map_clusters2.jpeg){fig-align="center" width="75%"}
 :::

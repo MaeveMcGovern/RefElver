@@ -429,7 +429,12 @@ X <- full_join(Station_Info, Climate_Clean)
 
 Water_Chem_Climate <- full_join(X, Water_Clean) %>%
   filter_at(vars(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l), any_vars(!is.na(.))) %>% 
-  filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) # Remove clay rivers
+  filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) %>% # Remove clay rivers
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% distinct()
 
 summary(Water_Chem_Climate)
 write_csv(Water_Chem_Climate, file = "Clean_Data/Water_Chem_Climate.csv")

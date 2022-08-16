@@ -30,7 +30,9 @@ library(pdftools)
 # Load data
 
 # Delineated watersheds
-watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") %>% 
+   mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
+   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
 
 # river station coordinates
 stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") 
@@ -38,7 +40,9 @@ stations_cord <- st_as_sf(stations, coords = c("longitude", "latitude"), crs = "
 stations_cord = st_transform(stations_cord, "EPSG:25833")
 
 # Station info
-Station_Info <- read_csv("Clean_Data/Station_Info.csv")
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+   mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
+   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
 ```
 
 
@@ -424,7 +428,9 @@ watershed <- watershed70 %>%
 Drought_Data2 <- full_join(watershed,Drought70) %>% 
   mutate(datetime = ymd_hms(datetime)) %>%
   mutate(year = year(datetime), month = month(datetime, label = TRUE), day = day(datetime)) %>%
-  filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022"))  
+  filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022"))  %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
+  mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
  
 st_geometry(Drought_Data2) <- NULL
 
@@ -441,9 +447,11 @@ Discharge_calc <- full_join(Drought_Data2, Station_Info) %>%
   mutate(full_name = "Discharge") %>% 
   mutate(unit = "mm_m3_day") %>% 
   mutate(time_resolution = 1440) %>% 
-  dplyr::select(site_id, datetime, par, full_name, unit, time_resolution, value_mean = value_mean2, value_min = value_min2, value_max = value_max2, value_median = value_median2)
+  dplyr::select(site_id, datetime, par, full_name, unit, time_resolution, value_mean = value_mean2, value_min = value_min2, value_max = value_max2, value_median = value_median2) %>% 
+  mutate(year = year(datetime), month = month(datetime, label = TRUE), day = day(datetime))
   
-Drought_Data <- full_join(Drought_Data2, Discharge_calc)
+Drought_Data <- full_join(Drought_Data2, Discharge_calc) %>% 
+    dplyr::select(site_id, datetime,  year, month, day, par, full_name, unit, time_resolution, value_min, value_median, value_max, value_mean)
 
 write_csv(Drought_Data, file = "Clean_Data/Intermediate/Drought_Data_daily.csv")
 ```
@@ -454,16 +462,16 @@ write_csv(Drought_Data, file = "Clean_Data/Intermediate/Drought_Data_daily.csv")
 #Units
 # gwb_q = mm
 # gwb_sssrel = %
-library(lubridate)
 
 W2 <- Climate_Data %>% 
   drop_na(par) %>% 
   mutate(datetime = ymd_hms(datetime)) %>%
   mutate(year = year(datetime),month = month(datetime, label = TRUE), day = day(datetime)) %>%
   filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022")) %>% 
-  dplyr::select(c(site_id, par, full_name, unit, year, month, value_min, value_max, value_mean)) %>% 
+  dplyr::select(c(site_id, par, full_name, unit, year, month, day, value_min, value_max, value_mean)) %>% 
   group_by(site_id, par, full_name, unit, year, month) %>% 
-  summarise(monthly_sum = sum(value_mean, na.rm = TRUE), 
+  summarise(day = day, 
+            monthly_sum = sum(value_mean, na.rm = TRUE), 
             monthly_mean = mean(value_mean, na.rm = TRUE),
             monthly_min = min(value_min, na.rm = TRUE),
             monthly_max = max(value_max, na.rm = TRUE),
@@ -474,9 +482,10 @@ W <- Drought_Data %>%
   mutate(datetime = ymd_hms(datetime)) %>%
   mutate(year = year(datetime),month = month(datetime, label = TRUE), day = day(datetime)) %>%
   filter(year %in% c("2017", "2018", "2019", "2020","2021", "2022")) %>% 
-  dplyr::select(c(site_id, par, full_name, unit, year, month, value_min, value_max, value_mean)) %>% 
+  dplyr::select(c(site_id, year, month, day, par, full_name, unit, value_min, value_max, value_mean)) %>% 
   group_by(site_id, par, full_name, unit, year, month) %>% 
-  summarise(monthly_sum = sum(value_mean, na.rm = TRUE),
+  summarise(day = day, 
+            monthly_sum = sum(value_mean, na.rm = TRUE),
             monthly_mean = mean(value_mean, na.rm = TRUE),
             monthly_min = min(value_min, na.rm = TRUE),
             monthly_max = max(value_max, na.rm = TRUE),
@@ -493,12 +502,12 @@ Catchment_Climate %>%
 write_csv(Catchment_Climate, file = "Clean_Data/Intermediate/Climate_Data.csv") 
 ```
 
+
 ```{r}
-# Drougt Map.
+# Drought Map.
 
 # Earth's water capacity and degree of saturation (gwb_sssdev and gwb_sssrel)
 # The earth's water capacity is defined as the storage capacity in the ground and groundwater # zones compared with the highest saturation simulated with the HBV model in the period # 1981-2010. The degree of saturation is given as a percentage of water saturation in soil. The # percentage is the ratio between the current simulated water stock and the maximum simulated # water stock in the period 1981-2010. The calculations are made with the HBV model.
-
 
 watershed_fdro <- Catchment_Climate %>% filter(par == "gwb_sssrel") %>% 
   dplyr::select(c(site_id, year, monthly_mean, monthly_min, monthly_max)) %>%
@@ -582,7 +591,6 @@ jpeg::writeJPEG(bitmap, "Figures/Hydro3.jpeg")
 ```{r}
 Climate <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
   mutate(monthly_mean = ifelse(grepl("rr", par), monthly_sum, monthly_mean)) %>% 
-  mutate(day = 1) %>% 
   mutate(Date = paste(year, month, day, sep="-") %>% ymd() %>% as.Date()) %>% 
   dplyr::select(c(site_id, par, Date, monthly_mean)) %>% 
   pivot_wider(names_from = par, values_from = monthly_mean) %>% 
@@ -597,8 +605,7 @@ Climate <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>%
          site_id = str_replace_all(site_id, "Ø", "O"),
          site_id = str_replace_all(site_id, "Æ", "AE"), 
          site_id = str_replace_all(site_id, "S_021_1187_VesB", "S_021_1187_Ves"),
-        site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei"))
+         site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei"))
 
 write_csv(Climate, file = "Clean_Data/Intermediate/Climate_processed.csv")
 ```
-

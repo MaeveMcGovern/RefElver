@@ -1,5 +1,27 @@
 # Fluxes {.unnumbered}
 
+## Stream Flow
+
+::: panel-tabset
+### Flow Regimes
+
+![Figure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5).](Figures/map_clusters2.jpeg){fig-align="center"}
+
+### 2018/2020
+
+![](Figures/Group1_Flow.jpeg)
+
+### 2019/2021
+
+![](Figures/Group2_Flow.jpeg){fig-align="center"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Group3_Flow.jpeg){fig-align="center"}
+:::
+
+## Fluxes
+
 ::: panel-tabset
 ### 2018/2020
 
@@ -12,8 +34,4 @@
 
 ::: panel-tabset
 ## More Info
-
-### DOC
-
-![](Figures/daily_flux_v_Q_DOC.jpeg){fig-align="center"} ![](Figures/standard_flow.jpeg){fig-align="center"}
 :::

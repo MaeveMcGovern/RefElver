@@ -20,27 +20,15 @@ library(jpeg)
 library(pdftools)
 library(arrow)
 library(zoo)
+library(patchwork)
+
+library(dichromat)
+colorschemes
 ```
 
 # files for juptyerhub
 
 ```{r}
-Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
-  dplyr::select(c(site_id, par, datetime, value_mean)) %>% 
-  separate(datetime, c("date", "Time"), sep = " ") %>% 
-  filter(par =="Q") %>% 
-  pivot_wider(names_from ="par", values_from = "value_mean") %>% 
-  group_by(site_id, date) %>% 
-  mutate(flow_m3ps = Q/11574.1) %>% 
-  ungroup() %>% 
-  dplyr::select(site_id, date, flow_m3ps) %>% 
-  mutate(date = ymd(date)) %>% 
-  mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
-  mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
-
-write_csv(Drought_Daily, "Clean_Data/Intermediate/Drought_Data_daily2.csv")
-
-
 ### For matching to Python workflow
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 DOC_data <- Water_Chem_Climate %>% 
@@ -78,11 +66,24 @@ write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 ```
 
 
+# Linear interpolation and flux calculation
 ```{r}
+Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
+  dplyr::select(c(site_id, par, datetime, value_mean)) %>% 
+  separate(datetime, c("date", "Time"), sep = " ") %>% 
+  filter(par =="Q") %>% 
+  pivot_wider(names_from ="par", values_from = "value_mean") %>% 
+  group_by(site_id, date) %>% 
+  mutate(flow_m3ps = Q/11574.1) %>% 
+  ungroup() %>% 
+  dplyr::select(site_id, date, flow_m3ps) %>% 
+  mutate(date = ymd(date)) 
+
+write_csv(Drought_Daily, "Clean_Data/Intermediate/Drought_Data_daily2.csv")
+
 Water_Chem_Climate <- read_csv_arrow("Clean_Data/Water_Chem_Climate.csv")
 Drought_Daily <- read_csv_arrow("Clean_Data/Intermediate/Drought_Data_daily2.csv")
 
-names(Water_Chem_Climate)
 Water_data <- Water_Chem_Climate %>% 
   ungroup() %>% 
   dplyr::select(site_id, date=Date, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Al_ug_L, Ca_mg_L, Fe_ug_L, DOC_mg_L, K_mg_L, Mg_mg_L, Na_mg_L, NO3_ug_L, PO4_ug_L, SiO2_mg_L, SO4_mg_L, TOC_mg_L, TotN_ug_L, TotP_ug_L) 
@@ -264,9 +265,6 @@ write_csv_arrow(annual_flux_all, "Clean_Data/annual_flux_all.csv")
 
 
 ```{r}
-library(dichromat)
-colorschemes
-
 # Annual Flux
 annual_flux_all <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
     mutate(variable = str_replace_all(variable, "_ug_L", "")) %>%
@@ -281,7 +279,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   mutate(year = as.character(year)) %>% 
   ggplot(aes(x = okoregion, y = flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA,alpha = 0.7, width = 0.5) +
-  scale_fill_manual(values=c("#3399FF","#FFCC66")) +
+  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
@@ -298,7 +296,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   mutate(year = as.character(year)) %>% 
   ggplot(aes(x = okoregion, y = flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
-  scale_fill_manual(values=c("#FFCC66", "#3399FF")) +
+  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
@@ -387,9 +385,7 @@ gwb_q_daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   filter(par =="gwb_q") %>% 
   pivot_wider(names_from ="par", values_from = "value_mean") %>% 
   dplyr::select(site_id, date, gwb_q) %>% 
-  mutate(date = ymd(date)) %>% 
-  mutate(site_id = str_replace_all(site_id, "-", "_")) %>% 
-  mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
+  mutate(date = ymd(date)) 
 
 Data2 <- full_join(concentrations_daily, gwb_q_daily)
 Data <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na()
@@ -413,11 +409,15 @@ jpeg::writeJPEG(bitmap, "Figures/Q_C_daily.jpeg")
 
 ```{r}
 # Mean monthly standardized stream flow. 
-
 # subtract mean and divide by SD. 
 
 Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion)
+  dplyr::select(site_id, rapportnavn, okoregion) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
+Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
 
 flow_daily <- read_csv_arrow("Clean_Data/daily_flux_all.csv") %>% 
   dplyr::select(site_id, month, date, year, flow_m3ps) 
@@ -429,10 +429,10 @@ Data <- full_join(flow_daily, Ecoregions) %>%  distinct() %>% drop_na() %>%
   group_by(rapportnavn, year, month) %>% 
   mutate(flow_m3ps = mean(flow_m3ps)) %>%  ungroup() %>% 
   group_by(rapportnavn, year) %>% 
-  summarise(site_id = site_id, okoregion = okoregion,date = date, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
+  summarise(Group = Group, site_id = site_id, okoregion = okoregion,date = date, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
   mutate(flow_m3ps_sd = (flow_m3ps - mean)/sd)
 
-
+# All stations
 Plot <- Data %>% 
   ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
@@ -448,6 +448,62 @@ bitmap <- pdf_render_page("Figures/standard_flow.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/standard_flow.jpeg")
 
 
+# By Group
+
+Plot1 <- Data %>% 
+  filter(Group == "'18/'20") %>% 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  geom_line() +
+  geom_point(size = 0.05) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  #geom_smooth(method = "lm", se = T, size = 0.1) +
+  facet_wrap(~rapportnavn, ncol =3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
+  xlab("Month") + labs(color ="year") + xlab(NULL) + ylab("Standardized flow")
+
+
+Plot2 <- Data %>% 
+  filter(Group == "'19/'21") %>% 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  geom_line() +
+  geom_point(size = 0.05) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  #geom_smooth(method = "lm", se = T, size = 0.1) +
+  facet_wrap(~rapportnavn, ncol =3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
+  xlab("Month") + labs(color ="year") + xlab(NULL) + ylab("Standardized flow")
+
+Plot3 <- Data %>% 
+  filter(Group == "'18/'19/'20/'21") %>% 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  geom_line() +
+  geom_point(size = 0.05) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  #geom_smooth(method = "lm", se = T, size = 0.1) +
+  facet_wrap(~rapportnavn, ncol =3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
+  xlab("Month") + labs(color ="year") + xlab(NULL) + ylab("Standardized flow")
+
+
+ggsave("Figures/Group1_Flow.pdf", Plot1, bg = "white", width = 7, height = 8, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Group1_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Group1_Flow.jpeg")
+
+ggsave("Figures/Group2_Flow.pdf", Plot2, bg = "white", width = 7, height = 12, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Group2_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Group2_Flow.jpeg")
+
+ggsave("Figures/Group3_Flow.pdf", Plot3, bg = "white", width = 7, height = 2, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Group3_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Group3_Flow.jpeg")
+```
+
+
+# Cluster flow curves
+```{r}
 ##### Cluster flow curves
 library(kmlShape)
 
@@ -480,20 +536,22 @@ parKmlShape(aggregationMethod="hierarchical")
 kmlShape(myClds, nbClusters = 5, timeScale = 0.1, 
          FrechetSumOrMax ="max", toPlot="both", parAlgo=parKmlShape())
 
-clusters2 <- as.data.frame(myClds["clusters"])
+clusters2 <- as.data.frame(myClds["clusters"]) %>% 
+  mutate(cluster = myClds["clusters"]) %>% 
+  mutate(ID = row.names(.))
 
 par(ask=FALSE)
 
 plot(myClds)
 
-Clusters <- clusters2 %>% 
-  mutate(cluster =ifelse(grepl("3|4", myClds["clusters"]), 3, myClds["clusters"])) %>% 
-  mutate(cluster =ifelse(grepl("5", myClds["clusters"]), 4, cluster)) %>% 
-  mutate(ID = row.names(.))
+#Clusters <- clusters2 %>% 
+#  mutate(cluster =ifelse(grepl("3|4", myClds["clusters"]), 3, myClds["clusters"])) %>% 
+#  mutate(cluster =ifelse(grepl("5", myClds["clusters"]), 4, cluster)) %>% 
+#  mutate(ID = row.names(.))
 
 Data3 <- Data %>% 
   unite("ID", rapportnavn:year, sep = "_", remove = F, na.rm = FALSE) 
-Data4 <- full_join(Data3, Clusters)
+Data4 <- full_join(Data3, clusters2)
 
 Plot <- Data4 %>% 
   ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd)) + 
@@ -515,7 +573,7 @@ jpeg::writeJPEG(bitmap, "Figures/standard_flow_cluster1.jpeg")
 
 
 
-
+# Flow curves + Map
 ```{r}
 library(ggspatial)
 library("rnaturalearth")
@@ -551,9 +609,6 @@ ggsave("Figures/map_clusters.pdf", map, width = 4, height = 5, bg = "white", dev
 bitmap <- pdf_render_page("Figures/map_clusters.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/map_clusters.jpeg")
 
-
-
-library(patchwork)
 
 p <- (map|Plot) + plot_layout(ncol=2,widths=c(2.3,0.7), heights =c(1,1))
 
