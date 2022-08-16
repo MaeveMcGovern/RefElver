@@ -296,7 +296,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   mutate(year = as.character(year)) %>% 
   ggplot(aes(x = okoregion, y = flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
-  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
+  scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
