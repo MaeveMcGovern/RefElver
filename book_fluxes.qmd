@@ -29,7 +29,7 @@
 
 ### 2019/2021
 
-### ![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
 
 ### '18/'19/'20/'21
 
@@ -49,5 +49,5 @@
 
 ### 2018/2019/2020/2021
 
-![](Figures/lm_dots_ALL.jpeg){fig-align="center" width="80%"}
+![](Figures/lm_dots_ALL.jpeg){fig-align="center" width="60%"}
 :::

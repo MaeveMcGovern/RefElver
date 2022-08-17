@@ -60,7 +60,7 @@
     "href": "book_fluxes.html",
     "title": "Fluxes",
     "section": "",
-    "text": "Flow Regimes2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nFigure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5)."
+    "text": "Flow Regimes2018/20202019/2021’18/’19/’20/’21\n\n\n\n\n\nFigure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5)."
   },
   {
     "objectID": "book_drought.html",
@@ -74,7 +74,7 @@
     "href": "book_fluxes.html#fluxes",
     "title": "Fluxes",
     "section": "Fluxes",
-    "text": "Fluxes\n\n2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nMore Info"
+    "text": "Fluxes\n\n2018/20202019/2021’18/’19/’20/’21"
   },
   {
     "objectID": "book_climate.html#hydrology",
@@ -110,5 +110,12 @@
     "title": "Water Chemistry",
     "section": "Carbon",
     "text": "Carbon\n\n2018/20202019/20212018/2019/2020/2021"
+  },
+  {
+    "objectID": "book_fluxes.html#qc",
+    "href": "book_fluxes.html#qc",
+    "title": "Fluxes",
+    "section": "Q/C",
+    "text": "Q/C\n\n2018/20202019/20212018/2019/2020/2021"
   }
 ]
