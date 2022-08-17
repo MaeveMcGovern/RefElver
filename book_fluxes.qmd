@@ -15,7 +15,7 @@
 
 ![](Figures/Group2_Flow.jpeg){fig-align="center"}
 
-### 2018/2019/2020/2021
+### '18/'19/'20/'21
 
 ![](Figures/Group3_Flow.jpeg){fig-align="center"}
 :::
@@ -29,9 +29,25 @@
 
 ### 2019/2021
 
-![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+### ![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+
+### '18/'19/'20/'21
+
+![](Figures/Annual_Flux_All4.jpeg){fig-align="center"}
 :::
 
+## Q/C
+
 ::: panel-tabset
-## More Info
+### 2018/2020
+
+![](Figures/lm_dots_18.jpeg){fig-align="center" width="80%"}
+
+### 2019/2021
+
+![](Figures/lm_dots_19.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/lm_dots_ALL.jpeg){fig-align="center" width="80%"}
 :::
