@@ -766,6 +766,13 @@ Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>%
 Extract_drought_df3$drought_time <- factor(Extract_drought_df3$drought_time,
                         levels = c("Before", "During", "After"))
 
+write_csv(Extract_drought_df3, "Clean_Data/Extract_drought.csv")
+
+Extract_drought_df3$variable <- factor(Extract_drought_df3$variable, 
+                                       levels = c("DOC", "TOC", "TotN","TotP", "NO3", "PO4", "SiO2", 
+                                                  "SO4", "K", "Mg", "Na", "Ca", "Al", "Al_il", "Al_r", "Fe"), 
+                                       labels = c("DOC", "TOC", "TotN","TotP", "NO3", "PO4", "SiO2", 
+                                                  "SO4", "K", "Mg", "Na", "Ca", "Al", "Al_il", "Al_r", "Fe"))
 
 # 18/20
 # Intercept
@@ -781,7 +788,8 @@ lm_dots_18_Inter <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Intercept") + ylab(NULL)
+  xlab("Q/C Intercept") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
   
 # Slope
 lm_dots_18_S <- Extract_drought_df3 %>% 
@@ -796,7 +804,8 @@ lm_dots_18_S <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="bottom") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Slope") + ylab(NULL)
+  xlab("Q/C Slope") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
   
 p <- (lm_dots_18_Inter/lm_dots_18_S) + plot_annotation(tag_levels = 'A')
 
@@ -819,7 +828,8 @@ lm_dots_19_Inter <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Intercept") + ylab(NULL)
+  xlab("Q/C Intercept") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
 
 # Slope
 lm_dots_19_S <- Extract_drought_df3 %>% 
@@ -834,7 +844,8 @@ lm_dots_19_S <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="bottom") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Slope") + ylab(NULL)
+  xlab("Q/C Slope") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
   
 p <- (lm_dots_19_Inter/lm_dots_19_S)  + plot_annotation(tag_levels = 'A')
 
@@ -857,7 +868,8 @@ lm_dots_ALL_Inter <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Intercept") + ylab(NULL)
+  xlab("Q/C Intercept") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
 
 # Slope
 lm_dots_ALL_S <- Extract_drought_df3 %>% 
@@ -872,7 +884,8 @@ lm_dots_ALL_S <- Extract_drought_df3 %>%
   guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
   theme(legend.position="bottom") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
-  xlab("Q/C Slope") + ylab(NULL)
+  xlab("Q/C Slope") + ylab(NULL) + 
+  theme(text = element_text(size = 16))
   
 p <- (lm_dots_ALL_Inter/lm_dots_ALL_S) + plot_annotation(tag_levels = 'A')
 
@@ -881,7 +894,140 @@ bitmap <- pdf_render_page("Figures/lm_dots_ALL.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/lm_dots_ALL.jpeg")
 ```
 
+# Slope & intercept corrplot
+```{r}
 
+library(tidyverse)
+library(broom)
+library(fs)
+library(lubridate)
+library(caret)
+
+Extract_drought_df3 <- read_csv("Clean_Data/Extract_drought.csv") %>% 
+  dplyr::select(-c(slope_mean, intercept_mean, r2)) %>% 
+  pivot_longer(cols= c(slope, intercept), names_to = "Envar", values_to= 'Envar_Measurement') 
+
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  pivot_longer(cols= -c(site_id, rapportnavn, fylke, okoregion), names_to = "Predict", values_to= 'Predict_Measurement') 
+
+corData <- full_join(Extract_drought_df3,Station_Info) %>% drop_na()
+
+data_nest <- corData %>% group_by(Group, okoregion, year, Envar,Predict) %>% nest() 
+str(slice(data_nest, 1))
+cor_fun <- function(data) cor.test(data$Envar_Measurement, data$Predict_Measurement, method = "pearson", adjust = "bonferroni") %>% tidy() #bonferroni
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+str(slice(data_nest, 1))
+corr_pr <- dplyr::select(data_nest, -data) %>% unnest()
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value <0.05, "Sig.", "Non Sig."))
+
+
+corr_pr_18 <- corr_pr %>% 
+  filter(Group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018","2020")) 
+
+corr_pr_18$Predict <- factor(corr_pr_18$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
+
+corr_pr_19 <- corr_pr %>% 
+  filter(Group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019","2021")) 
+
+corr_pr_19$Predict <- factor(corr_pr_19$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
+
+corr_pr_ALL <- corr_pr %>% 
+  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018","2019", "2020","2021")) 
+
+corr_pr_ALL$Predict <- factor(corr_pr_ALL$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
+
+# 2018/2020
+Figure <- ggplot() +
+  geom_tile(data = corr_pr_18,
+            aes(Envar, Predict, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_18, sig == "Sig."),
+            aes(Envar, Predict),
+            size = 1,
+            colour = "black",
+            fill = "transparent")+
+  geom_text(data = corr_pr_18,
+            aes(Envar, Predict, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")))+
+  scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
+  labs(x = "", y = "", fill = "", p.value = "")+
+  theme_minimal()+
+  facet_grid(year~okoregion) +
+  theme(panel.grid.major = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 10)) + labs(fill = "Pearson's\nCorrelation") + 
+  theme(text = element_text(size = 16))
+
+ggsave("Figures/Corrplot_18.pdf", Figure, width = 9, height = 10, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Corrplot_18.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Corrplot_18.jpeg")
+
+
+# 2019/2021
+Figure <- ggplot() +
+  geom_tile(data = corr_pr_19,
+            aes(Envar, Predict, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_19, sig == "Sig."),
+            aes(Envar, Predict),
+            size = 1,
+            colour = "black",
+            fill = "transparent")+
+  geom_text(data = corr_pr_19,
+            aes(Envar, Predict, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")))+
+  scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
+  labs(x = "", y = "", fill = "", p.value = "")+
+  theme_minimal()+
+  facet_grid(year~okoregion) +
+  theme(panel.grid.major = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 10)) + labs(fill = "Pearson's\nCorrelation") + 
+  theme(text = element_text(size = 16))
+
+ggsave("Figures/Corrplot_19.pdf", Figure, width = 9, height = 10, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Corrplot_19.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Corrplot_19.jpeg")
+
+
+# ALL
+Figure <- ggplot() +
+  geom_tile(data = corr_pr_ALL,
+            aes(Envar, Predict, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_ALL, sig == "Sig."),
+            aes(Envar, Predict),
+            size = 1,
+            colour = "black",
+            fill = "transparent")+
+  geom_text(data = corr_pr_ALL,
+            aes(Envar, Predict, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")))+
+  scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
+  labs(x = "", y = "", fill = "", p.value = "")+
+  theme_minimal()+
+  facet_grid(okoregion~year) +
+  theme(panel.grid.major = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 10)) + labs(fill = "Pearson's\nCorrelation") + 
+  theme(text = element_text(size = 16))
+
+ggsave("Figures/Corrplot_ALL.pdf", Figure, width = 9, height = 8, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Corrplot_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Corrplot_ALL.jpeg")
+```
 
 ```{r}
 # Mean monthly standardized stream flow. 

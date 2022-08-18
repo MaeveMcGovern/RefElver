@@ -51,3 +51,20 @@
 
 ![](Figures/lm_dots_ALL.jpeg){fig-align="center" width="60%"}
 :::
+
+## Pearson's correlation
+::: panel-tabset
+
+### 2018/2020
+
+![](Figures/Corrplot_18.jpeg){fig-align="center" width="60%"}
+
+### 2019/2021
+
+![](Figures/Corrplot_19.jpeg){fig-align="center" width="60%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Corrplot_ALL.jpeg){fig-align="center" width="60%"}
+
+:::

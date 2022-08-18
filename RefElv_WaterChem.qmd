@@ -18,7 +18,7 @@ Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 # Raw Plots of Water Chemistry by rivers
 
 ```{r}
-names(Water_Chem_Climate)
+
 #Phys
 Phys <- Water_Chem_Climate %>% 
   dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, 
