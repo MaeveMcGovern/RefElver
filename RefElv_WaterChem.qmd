@@ -14,6 +14,26 @@ Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 ```
 
 
+```{r}
+XX<- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(c(Na_mg_L, site_id, rapportnavn, Date)) %>% distinct() %>% 
+  arrange(site_id)
+
+X <- XX %>% dplyr::select(site_id) %>% distinct()
+
+Plot1 <- XX %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(!year %in% c("2017", "2022")) %>% 
+  ggplot() +
+  geom_point(aes(x = Date, y = Na_mg_L, color = factor(year))) +
+  scale_y_log10() + 
+  facet_wrap(~site_id, ncol = 3)
+
+ggsave("Figures/Na.pdf", Plot1, width = 7, height = 25, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Na.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Na.jpeg")
+```
+
 
 # Raw Plots of Water Chemistry by rivers
 
@@ -21,8 +41,7 @@ Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
 #Phys
 Phys <- Water_Chem_Climate %>% 
-  dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, 
-                  Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
+  dplyr::select(c(site_id, Date, mean_elevation, Temp_C, Turbidity, Conductivity_mS_m, pH, Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
   pivot_longer(cols= -c(site_id, Date, mean_elevation), names_to = "Variable", values_to = "Measurement") %>% 
   mutate(Elevation = ifelse(mean_elevation < 900, "low", "high")) %>% 
   drop_na(Elevation)
@@ -198,30 +217,21 @@ jpeg::writeJPEG(bitmap, "Figures/Carbon_sites.jpeg")
 
 
 
-# Water Chemistry by Groups color = Ecoregion
+# Water Chemistry by groups color = Ecoregion
 
 ## Physical
 
 ```{r}
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
-
-
 # Phys: 2018/2020
-Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Phys <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
                   Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Phys$Variable <- factor(Phys$Variable,
@@ -254,13 +264,13 @@ jpeg::writeJPEG(bitmap, "Figures/Phys_18_20.jpeg")
 
 # Phys: 2019/2021
 
-Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Phys <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
                   Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Phys$Variable <- factor(Phys$Variable,
@@ -300,13 +310,13 @@ jpeg::writeJPEG(bitmap, "Figures/Phys_19_21.jpeg")
 
 # Phys: 2018/2019/2020/2021
 
-Phys <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Phys <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, Turbidity, Conductivity_mS_m, pH, 
                   Water_Color_mgPt_l, Alkalinity_mmol_L, ANC_µEkv_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Phys$Variable <- factor(Phys$Variable,
@@ -341,24 +351,15 @@ jpeg::writeJPEG(bitmap, "Figures/Phys_ALL.jpeg")
 ## Metals2
 ```{r}
 #Metals2
-
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
-
 # Metals2: 2018/2020
-Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Metals2 <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Metals2$Variable <- factor(Metals2$Variable,
@@ -390,12 +391,12 @@ jpeg::writeJPEG(bitmap, "Figures/Metals2_18_20.jpeg")
 
 # Metals: 2019/2021
 
-Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Metals2 <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Metals2$Variable <- factor(Metals2$Variable,
@@ -433,12 +434,12 @@ jpeg::writeJPEG(bitmap, "Figures/Metals2_19_21.jpeg")
 
 # Metals: 2018/2019/2020/2021
 
-Metals2 <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Metals2 <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Fe_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Metals2$Variable <- factor(Metals2$Variable,
@@ -471,24 +472,15 @@ jpeg::writeJPEG(bitmap, "Figures/Metals2_ALL.jpeg")
 
 ```{r}
 # Ions
-
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
-
 # Ions: 2018/2020
-Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Ions <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Ions$Variable <- factor(Ions$Variable,
@@ -519,12 +511,12 @@ jpeg::writeJPEG(bitmap, "Figures/Ions_18_20.jpeg")
 
 # Ions 2019/2021
 
-Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Ions <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Ions$Variable <- factor(Ions$Variable,
@@ -561,12 +553,12 @@ jpeg::writeJPEG(bitmap, "Figures/Ions_19_21.jpeg")
 
 # Ions: 2018/2019/2020/2021
 
-Ions <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Ions <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Ions$Variable <- factor(Ions$Variable,
@@ -601,21 +593,13 @@ jpeg::writeJPEG(bitmap, "Figures/Ions_ALL.jpeg")
 # Nutrients
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
-
 # Nutrients: 2018/2020
-Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Nutrients <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Nutrients$Variable <- factor(Nutrients$Variable,
@@ -647,12 +631,12 @@ jpeg::writeJPEG(bitmap, "Figures/Nutrients_18_20.jpeg")
 
 # Nutrients 2019/2021
 
-Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Nutrients <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Nutrients$Variable <- factor(Nutrients$Variable,
@@ -690,12 +674,12 @@ jpeg::writeJPEG(bitmap, "Figures/Nutrients_19_21.jpeg")
 
 # Nutrients: 2018/2019/2020/2021
 
-Nutrients <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Nutrients <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Nutrients$Variable <- factor(Nutrients$Variable,
@@ -731,21 +715,13 @@ jpeg::writeJPEG(bitmap, "Figures/Nutrients_ALL.jpeg")
 # Carbon
 Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
-
 # Carbon: 2018/2020
-Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Carbon <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
@@ -771,12 +747,12 @@ jpeg::writeJPEG(bitmap, "Figures/Carbon_18_20.jpeg")
 
 # Carbon 2019/2021
 
-Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Carbon <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 
 Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
@@ -809,12 +785,12 @@ jpeg::writeJPEG(bitmap, "Figures/Carbon_19_21.jpeg")
 
 # Carbon: 2018/2019/2020/2021
 
-Carbon <- full_join(Water_Chem_Climate,Ecoregions) %>% 
+Carbon <- Water_Chem_Climate %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Group, DOC_mg_L, TOC_mg_L)) %>% 
-  pivot_longer(cols= -c(site_id, year, month, Group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+  dplyr::select(c(site_id, year, month, okoregion, group, DOC_mg_L, TOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
 
 Carbon$Variable <- factor(Carbon$Variable, levels = c("DOC_mg_L", "TOC_mg_L"),
                           labels = c(bquote('DOC'~ (mg~L^-1)), 
@@ -1029,7 +1005,7 @@ bitmap <- pdf_render_page("Figures/Carbon.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Carbon.jpeg")
 ```
 
-# Waterchem colors by Land Cover Groupings. 
+# Waterchem colors by Land Cover groupings. 
 ```{r}
 names(Water_Chem_Climate)
 #Phys

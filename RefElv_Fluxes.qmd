@@ -22,8 +22,8 @@ library(arrow)
 library(zoo)
 library(patchwork)
 
-library(dichromat)
-colorschemes
+#library(dichromat)
+#colorschemes
 ```
 
 # files for juptyerhub
@@ -68,6 +68,7 @@ write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 
 # Linear interpolation and flux calculation
 ```{r}
+
 Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   dplyr::select(c(site_id, par, datetime, value_mean)) %>% 
   separate(datetime, c("date", "Time"), sep = " ") %>% 
@@ -80,9 +81,8 @@ Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   mutate(date = ymd(date)) 
 
 write_csv(Drought_Daily, "Clean_Data/Intermediate/Drought_Data_daily2.csv")
-
-Water_Chem_Climate <- read_csv_arrow("Clean_Data/Water_Chem_Climate.csv")
-Drought_Daily <- read_csv_arrow("Clean_Data/Intermediate/Drought_Data_daily2.csv")
+Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily2.csv")
 
 Water_data <- Water_Chem_Climate %>% 
   ungroup() %>% 
@@ -109,11 +109,13 @@ df_2017 <- interp_data %>%
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
 
 monthly_flux_2017 <- df_2017 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2017 <- df_2017 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -135,11 +137,13 @@ df_2018 <- interp_data %>%
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
 
 monthly_flux_2018 <- df_2018 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2018 <- df_2018 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -161,11 +165,13 @@ df_2019 <- interp_data %>%
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
 
 monthly_flux_2019 <- df_2019 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2019 <- df_2019 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -186,11 +192,13 @@ df_2020 <- interp_data %>%
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
 
 monthly_flux_2020 <- df_2020 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2020 <- df_2020 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -212,11 +220,13 @@ df_2021 <- interp_data %>%
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
 
 monthly_flux_2021 <- df_2021 %>% 
-   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
+  ungroup() %>% 
+  dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2021 <- df_2021 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -236,17 +246,16 @@ df_2022 <- interp_data %>%
   mutate(flux = concentrations * flow_m3ps*86400) %>% 
   mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
   mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-  
-#Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Al_ug_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, Fe_ug_L 
-#DOC_mg_L, K_mg_L, Mg_mg_L, Na_mg_L, SiO2_mg_L, SO4_mg_L, TOC_mg_L, Ca_mg_L   
 
 
 monthly_flux_2022 <- df_2022 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
   group_by(site_id, variable, year, month) %>% 
   summarise(monthly_flux = sum(flux, na.rm = TRUE))
 
 annual_flux_2022 <- df_2022 %>% 
+  ungroup() %>% 
   dplyr::select(c(site_id, variable, year, flux)) %>% 
   group_by(site_id, variable, year) %>% 
   summarise(annual_flux = sum(flux, na.rm = TRUE))
@@ -258,32 +267,27 @@ annual_flux_all <- rbind(annual_flux_2017, annual_flux_2018, annual_flux_2019, a
 
 monthly_flux_all <- rbind(monthly_flux_2017, monthly_flux_2018, monthly_flux_2019, monthly_flux_2020, monthly_flux_2021, monthly_flux_2022) %>%  distinct()
 
-write_csv_arrow(daily_flux_all, "Clean_Data/daily_flux_all.csv")
-write_csv_arrow(monthly_flux_all, "Clean_Data/monthly_flux_all.csv")
-write_csv_arrow(annual_flux_all, "Clean_Data/annual_flux_all.csv")
+write_csv(daily_flux_all, "Clean_Data/daily_flux_all.csv")
+write_csv(monthly_flux_all, "Clean_Data/monthly_flux_all.csv")
+write_csv(annual_flux_all, "Clean_Data/annual_flux_all.csv")
 ```
 
 # Annual Flux
 ```{r}
 # Annual Flux
-annual_flux_all <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
+annual_flux_all <- read_csv("Clean_Data/annual_flux_all.csv") %>% 
     mutate(variable = str_replace_all(variable, "_ug_L", "")) %>%
     mutate(variable = str_replace_all(variable, "_mg_L", ""))
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion, group) 
 
 options(scipen = 99999999)
-Plot <- full_join(annual_flux_all, Ecoregions) %>% drop_na() %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
   mutate(year = as.character(year)) %>% 
-  ggplot(aes(x = okoregion, y = flux, fill = year)) +
+  ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA,alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#3399FF", "#FF8000")) +
   scale_y_log10() + 
@@ -297,11 +301,11 @@ bitmap <- pdf_render_page("Figures/Annual_Flux_19_21.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_19_21.jpeg")
 
 options(scipen = 99999999)
-Plot <- full_join(annual_flux_all, Ecoregions) %>% drop_na() %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   mutate(year = as.character(year)) %>% 
-  ggplot(aes(x = okoregion, y = flux, fill = year)) +
+  ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
   scale_y_log10() + 
@@ -316,11 +320,11 @@ jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_18_20.jpeg")
 
 
 options(scipen = 99999999)
-Plot <- full_join(annual_flux_all, Ecoregions) %>% drop_na() %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
   mutate(year = as.character(year)) %>% 
-  ggplot(aes(x = okoregion, y = flux, fill = year)) +
+  ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
   geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
   scale_y_log10() + 
@@ -398,6 +402,7 @@ bitmap <- pdf_render_page("Figures/Q_C.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Q_C.jpeg")
 ```
 
+
 # Slope and intercepts
 ```{r}
 
@@ -406,10 +411,10 @@ library(ggstance)
 
 # Daily Concentrations (interpolated and summed back to monthly. 
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
   dplyr::select(site_id, okoregion)
 
-concentrations_daily <- read_csv_arrow("Clean_Data/daily_flux_all.csv") %>% 
+concentrations_daily <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
   dplyr::select(site_id, month, date, year, variable, concentrations) 
   
 gwb_q_daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
@@ -421,7 +426,7 @@ gwb_q_daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   mutate(date = ymd(date)) 
 
 Data2 <- full_join(concentrations_daily, gwb_q_daily)
-Data <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na()
+Data <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na()
 
 Plot <- Data %>% 
   filter(!year %in% c("2017", "2022")) %>% 
@@ -441,17 +446,12 @@ jpeg::writeJPEG(bitmap, "Figures/Q_C_daily.jpeg")
 
 ###### By group
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion) 
 
 # QC: 2018/2020
 
-concentrations_daily <- read_csv_arrow("Clean_Data/daily_flux_all.csv") %>% 
+concentrations_daily <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
   dplyr::select(site_id, date, year, variable, concentrations) %>% 
    filter(year %in% c("2018", "2019", "2020", "2021"))
 
@@ -466,9 +466,9 @@ gwb_q_daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   filter(year %in% c("2018", "2019", "2020", "2021"))
 
 Data2 <- full_join(concentrations_daily, gwb_q_daily)
-Data <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na() %>% 
+Data <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na() %>% 
   mutate(year = year(date), month = month(date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   mutate(drought_time =ifelse(grepl("Jan|Feb|Mar|Apr", month), "Before", "After")) %>%
   mutate(drought_time =ifelse(grepl("May|Jun|Jul", month), "During", drought_time)) %>%
@@ -563,9 +563,9 @@ jpeg::writeJPEG(bitmap, "Figures/lm_18_20.jpeg")
 
 
 ### 2019/2021
-Data_19 <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na() %>% 
+Data_19 <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na() %>% 
   mutate(year = year(date), month = month(date, label = TRUE)) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
   mutate(drought_time =ifelse(grepl("Jan|Feb|Mar|Apr", month), "Before", "After")) %>%
   mutate(drought_time =ifelse(grepl("May|Jun|Jul", month), "During", drought_time)) %>%
@@ -637,20 +637,17 @@ bitmap <- pdf_render_page("Figures/lm_19_21.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/lm_19_21.jpeg")
 
 
-
-
 ### ALl
 ### 2019/2021
-Data_ALL <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na() %>% 
+Data_ALL <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na() %>% 
   mutate(year = year(date), month = month(date, label = TRUE)) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019","2020", "2021")) %>% 
   mutate(drought_time =ifelse(grepl("Jan|Feb|Mar|Apr", month), "Before", "After")) %>%
   mutate(drought_time =ifelse(grepl("May|Jun|Jul", month), "During", drought_time)) %>%
   dplyr::select(c(site_id, date, year, gwb_q, okoregion, variable, concentrations, drought_time)) %>% 
   mutate(variable = str_replace_all(variable, "_ug_L", "")) %>%
   mutate(variable = str_replace_all(variable, "_mg_L", ""))
-
 
 # Extract slope and intercepts of Q/C plots. 
 Plot <- Data_ALL %>% 
@@ -715,14 +712,11 @@ bitmap <- pdf_render_page("Figures/lm_ALL.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/lm_ALL.jpeg")
 
 
-
-
-
 ###### dot plot
 
 # QC: 2018/2020
 
-concentrations_daily <- read_csv_arrow("Clean_Data/daily_flux_all.csv") %>% 
+concentrations_daily <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
   dplyr::select(site_id, date, year, variable, concentrations) %>% 
    filter(year %in% c("2018", "2019", "2020", "2021"))
 
@@ -737,11 +731,11 @@ gwb_q_daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
   filter(year %in% c("2018", "2019", "2020", "2021"))
 
 Data2 <- full_join(concentrations_daily, gwb_q_daily)
-Data <- full_join(Data2, Ecoregions) %>%  distinct() %>% drop_na() %>% 
+Data <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na() %>% 
   mutate(year = year(date), month = month(date, label = TRUE)) %>% 
   mutate(drought_time =ifelse(grepl("Jan|Feb|Mar|Apr", month), "Before", "After")) %>%
   mutate(drought_time =ifelse(grepl("May|Jun|Jul", month), "During", drought_time)) %>%
-  dplyr::select(c(site_id, date, year, Group, gwb_q, okoregion, variable, concentrations, drought_time)) %>% 
+  dplyr::select(c(site_id, date, year, group, gwb_q, okoregion, variable, concentrations, drought_time)) %>% 
     mutate(variable = str_replace_all(variable, "_ug_L", "")) %>%
     mutate(variable = str_replace_all(variable, "_mg_L", ""))
 
@@ -757,7 +751,7 @@ Extract_drought_df <- Data %>%
   data_frame(slope = coef(mod)[2], intercept = coef(mod)[1], r2 = summary(mod)$r.squared)}) 
 
 Extract_drought_df2 <- full_join(Extract_drought_df, Data) %>% 
-  group_by(year, okoregion, Group, drought_time, variable) %>%
+  group_by(year, okoregion, group, drought_time, variable) %>%
   summarise_at(vars(matches("slope|intercept")), funs(mean=mean))
 
 Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>% 
@@ -777,7 +771,7 @@ Extract_drought_df3$variable <- factor(Extract_drought_df3$variable,
 # 18/20
 # Intercept
 lm_dots_18_Inter <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018","2020")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = intercept_mean, y = reorder(variable,intercept_mean)), size = 2.5, alpha = 0.6) +
@@ -793,7 +787,7 @@ lm_dots_18_Inter <- Extract_drought_df3 %>%
   
 # Slope
 lm_dots_18_S <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018","2020")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), size = 2.5, alpha = 0.6) +
@@ -817,7 +811,7 @@ jpeg::writeJPEG(bitmap, "Figures/lm_dots_18.jpeg")
 # 19/21
 # Intercept
 lm_dots_19_Inter <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019","2021")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = intercept_mean, y = reorder(variable,intercept_mean)), size = 2.5, alpha = 0.6) +
@@ -833,7 +827,7 @@ lm_dots_19_Inter <- Extract_drought_df3 %>%
 
 # Slope
 lm_dots_19_S <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019","2021")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), size = 2.5, alpha = 0.6) +
@@ -857,7 +851,7 @@ jpeg::writeJPEG(bitmap, "Figures/lm_dots_19.jpeg")
 #ALL
 # Intercept
 lm_dots_ALL_Inter <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018","2019", "2020","2021")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = intercept_mean, y = reorder(variable,intercept_mean)), size = 2.5, alpha = 0.6) +
@@ -873,7 +867,7 @@ lm_dots_ALL_Inter <- Extract_drought_df3 %>%
 
 # Slope
 lm_dots_ALL_S <- Extract_drought_df3 %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018","2019", "2020","2021")) %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), size = 2.5, alpha = 0.6) +
@@ -908,11 +902,11 @@ Extract_drought_df3 <- read_csv("Clean_Data/Extract_drought.csv") %>%
   pivot_longer(cols= c(slope, intercept), names_to = "Envar", values_to= 'Envar_Measurement') 
 
 Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
-  pivot_longer(cols= -c(site_id, rapportnavn, fylke, okoregion), names_to = "Predict", values_to= 'Predict_Measurement') 
+  pivot_longer(cols= -c(site_id, rapportnavn, fylke, okoregion, group), names_to = "Predict", values_to= 'Predict_Measurement') 
 
 corData <- full_join(Extract_drought_df3,Station_Info) %>% drop_na()
 
-data_nest <- corData %>% group_by(Group, okoregion, year, Envar,Predict) %>% nest() 
+data_nest <- corData %>% group_by(group, okoregion, year, Envar,Predict) %>% nest() 
 str(slice(data_nest, 1))
 cor_fun <- function(data) cor.test(data$Envar_Measurement, data$Predict_Measurement, method = "pearson", adjust = "bonferroni") %>% tidy() #bonferroni
 data_nest <- mutate(data_nest, model = map(data, cor_fun))
@@ -922,20 +916,23 @@ corr_pr <- mutate(corr_pr, sig = ifelse(p.value <0.05, "Sig.", "Non Sig."))
 
 
 corr_pr_18 <- corr_pr %>% 
-  filter(Group %in% c("'18/'20")) %>% 
-  filter(year %in% c("2018","2020")) 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018","2020")) %>% 
+  drop_na(estimate)
 
 corr_pr_18$Predict <- factor(corr_pr_18$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
 
 corr_pr_19 <- corr_pr %>% 
-  filter(Group %in% c("'19/'21")) %>% 
-  filter(year %in% c("2019","2021")) 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019","2021")) %>% 
+  drop_na(estimate)
 
 corr_pr_19$Predict <- factor(corr_pr_19$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
 
 corr_pr_ALL <- corr_pr %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
-  filter(year %in% c("2018","2019", "2020","2021")) 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018","2019", "2020","2021")) %>% 
+  drop_na(estimate)
 
 corr_pr_ALL$Predict <- factor(corr_pr_ALL$Predict, levels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","mean_annual_gwb_sssrel", "mean_annual_gwb_q", "sum_annual_rr", "mean_annual_tm", "mean_slope", "mean_elevation", "area_km2"), labels = c("other", "woodland_scrub", "agriculture", "mixed_forest", "coniferous_forest", "water_bodies", "peat_bogs", "glacier", "sparse_vegetation", "moors_and_heathland", "bare_rocks", "broad_leaved_forest", "longitude","latitude","min_2018_gwb_sssrel","m_an_gwb_sssrel", "m_an_gwb_q", "sum_an_rr", "m_an_tm", "m_slope", "m_elevation", "area_km2"))
 
@@ -1033,25 +1030,20 @@ jpeg::writeJPEG(bitmap, "Figures/Corrplot_ALL.jpeg")
 # Mean monthly standardized stream flow. 
 # subtract mean and divide by SD. 
 
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion, group) 
 
-flow_daily <- read_csv_arrow("Clean_Data/daily_flux_all.csv") %>% 
+flow_daily <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
   dplyr::select(site_id, month, date, year, flow_m3ps) 
 
-Data <- full_join(flow_daily, Ecoregions) %>%  distinct() %>% drop_na() %>% 
+Data <- full_join(flow_daily, Station_Info) %>%  distinct() %>% drop_na() %>% 
   filter(!year %in% c("2017", "2022")) %>% 
   group_by(rapportnavn, date) %>% 
   mutate(flow_m3ps = flow_m3ps * 86400) %>% ungroup() %>% 
   group_by(rapportnavn, year, month) %>% 
   mutate(flow_m3ps = mean(flow_m3ps)) %>%  ungroup() %>% 
   group_by(rapportnavn, year) %>% 
-  summarise(Group = Group, site_id = site_id, okoregion = okoregion,date = date, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
+  summarise(group = group, site_id = site_id, okoregion = okoregion,date = date, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
   mutate(flow_m3ps_sd = (flow_m3ps - mean)/sd)
 
 # All stations
@@ -1070,10 +1062,11 @@ bitmap <- pdf_render_page("Figures/standard_flow.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/standard_flow.jpeg")
 
 
-# By Group
+# By group
 
 Plot1 <- Data %>% 
-  filter(Group == "'18/'20") %>% 
+  filter(group == "'18/'20") %>% 
+  filter(year %in% c("2018", "2020")) %>% 
   ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
@@ -1086,7 +1079,8 @@ Plot1 <- Data %>%
 
 
 Plot2 <- Data %>% 
-  filter(Group == "'19/'21") %>% 
+  filter(group == "'19/'21") %>% 
+  filter(year %in% c("2019", "2021")) %>% 
   ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
@@ -1098,29 +1092,29 @@ Plot2 <- Data %>%
   xlab("Month") + labs(color ="year") + xlab(NULL) + ylab("Standardized flow")
 
 Plot3 <- Data %>% 
-  filter(Group == "'18/'19/'20/'21") %>% 
+  filter(group == "'18/'19/'20/'21") %>% 
   ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
   scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
   #geom_smooth(method = "lm", se = T, size = 0.1) +
-  facet_wrap(~rapportnavn, ncol =3) +
+  facet_wrap(~rapportnavn, ncol =2) +
   theme_bw() +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
   xlab("Month") + labs(color ="year") + xlab(NULL) + ylab("Standardized flow")
 
 
-ggsave("Figures/Group1_Flow.pdf", Plot1, bg = "white", width = 7, height = 8, device = cairo_pdf)
-bitmap <- pdf_render_page("Figures/Group1_Flow.pdf", page = 1, dpi = 300)
-jpeg::writeJPEG(bitmap, "Figures/Group1_Flow.jpeg")
+ggsave("Figures/group1_Flow.pdf", Plot1, bg = "white", width = 7, height = 12, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/group1_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/group1_Flow.jpeg")
 
-ggsave("Figures/Group2_Flow.pdf", Plot2, bg = "white", width = 7, height = 12, device = cairo_pdf)
-bitmap <- pdf_render_page("Figures/Group2_Flow.pdf", page = 1, dpi = 300)
-jpeg::writeJPEG(bitmap, "Figures/Group2_Flow.jpeg")
+ggsave("Figures/group2_Flow.pdf", Plot2, bg = "white", width = 7, height = 12, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/group2_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/group2_Flow.jpeg")
 
-ggsave("Figures/Group3_Flow.pdf", Plot3, bg = "white", width = 7, height = 2, device = cairo_pdf)
-bitmap <- pdf_render_page("Figures/Group3_Flow.pdf", page = 1, dpi = 300)
-jpeg::writeJPEG(bitmap, "Figures/Group3_Flow.jpeg")
+ggsave("Figures/group3_Flow.pdf", Plot3, bg = "white", width = 5, height = 4, device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/group3_Flow.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/group3_Flow.jpeg")
 ```
 
 
@@ -1202,13 +1196,10 @@ library("rnaturalearth")
 library("rnaturalearthdata")
 library(RColorBrewer)
 
-# delineated watersheds
-watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
-
 # river station coordinates
-stations <- read_csv("Raw_Data/Shape_files/Refelv_Station_Coordinates.csv") %>% 
-    mutate(site_id = str_replace_all(site_id, "-", "_"))
-X <- full_join(stations, Data4) %>% 
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") 
+
+X <- full_join(Station_Info, Data4) %>% 
   dplyr::select(c(site_id, latitude, longitude, cluster)) %>% distinct() %>% drop_na()
 
 

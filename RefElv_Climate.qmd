@@ -24,7 +24,9 @@ library(pdftools)
 ```
 
 
-```{r}
+```{r }
+#| eval = F
+
 # Drought Map.
 
 # Earth's water capacity and degree of saturation (gwb_sssdev and gwb_sssrel)
@@ -112,23 +114,17 @@ bitmap <- pdf_render_page("Figures/Hydro3.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Hydro3.jpeg")
 ```
 
+
 # Climate by groupings
 ```{r}
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion, group) 
 
-
-Climate_Plotter_Groups <- full_join(Climate_Plotter,Ecoregions)
-
+Climate_Plotter_groups <- full_join(Climate_Plotter, Station_Info)
 
 # 2018/2020
-Climate_Plotter_18_20 <- full_join(Climate_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+Climate_Plotter_18_20 <- full_join(Climate_Plotter, Station_Info) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -147,8 +143,8 @@ jpeg::writeJPEG(bitmap, "Figures/Climate_18_20.jpeg")
 
 
 # 2019/2021
-Climate_Plotter_19_21 <- full_join(Climate_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+Climate_Plotter_19_21 <- full_join(Climate_Plotter,Station_Info) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -167,8 +163,8 @@ jpeg::writeJPEG(bitmap, "Figures/Climate_19_21.jpeg")
 
 
 # 2018/19/20/21
-Climate_Plotter_ALL <- full_join(Climate_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+Climate_Plotter_ALL <- full_join(Climate_Plotter,Station_Info) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -189,20 +185,14 @@ jpeg::writeJPEG(bitmap, "Figures/Climate_ALL.jpeg")
 
 # Hydrology by groupings
 ```{r}
-Ecoregions <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(site_id, rapportnavn, okoregion) %>% 
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% drop_na() %>% distinct()
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion, group) 
 
-
-Hydro_Plotter_Groups <- full_join(Hydro_Plotter,Ecoregions)
+Hydro_Plotter_groups <- full_join(Hydro_Plotter, Station_Info)
 
 # 2018/2020
-Hydro_Plotter_18_20 <- full_join(Hydro_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'18/'20")) %>% 
+Hydro_Plotter_18_20 <- full_join(Hydro_Plotter,Station_Info) %>% 
+  filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -221,8 +211,8 @@ jpeg::writeJPEG(bitmap, "Figures/Hydrology_18_20.jpeg")
 
 
 # 2019/2021
-Hydro_Plotter_19_21 <- full_join(Hydro_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'19/'21")) %>% 
+Hydro_Plotter_19_21 <- full_join(Hydro_Plotter,Station_Info) %>% 
+  filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019", "2021")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -241,8 +231,8 @@ jpeg::writeJPEG(bitmap, "Figures/Hydrology_19_21.jpeg")
 
 
 # 2018/19/20/21
-Hydro_Plotter_ALL <- full_join(Hydro_Plotter,Ecoregions) %>% 
-  filter(Group %in% c("'18/'19/'20/'21")) %>% 
+Hydro_Plotter_ALL <- full_join(Hydro_Plotter,Station_Info) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
   mutate(year = year(Date), month = month(Date, label = TRUE), day = day(Date))
 
@@ -259,3 +249,81 @@ ggsave("Figures/Hydrology_ALL.pdf", Plot3, width = 5, height = 3.5, bg = "white"
 bitmap <- pdf_render_page("Figures/Hydrology_ALL.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Hydrology_ALL.jpeg")
 ```
+
+```{r}
+library(janitor)  
+
+Tog_Plotter <- full_join(Climate_Plotter_groups, Hydro_Plotter_groups) %>% 
+  filter(par %in% c("sum rr (mm)", "gwb_q (mm)")) %>% 
+  filter(group != "incomplete") %>% 
+  filter(!year %in% c("2017", "2022")) %>% 
+  filter(!(year %in% c("2019", "2021") & group == "'18/'20")) %>% 
+  filter(!(year %in% c("2018", "2020") & group == "'19/'21")) %>% 
+  pivot_wider(names_from = "par", values_from = "monthly_mean") %>% 
+  clean_names()
+
+ylim.prim_SUMS <- c(0, 100)  
+ylim.sec_SUMS <- c(0, 10)    
+
+b <- diff(ylim.prim_SUMS)/diff(ylim.sec_SUMS)
+a <- b*(ylim.prim_SUMS[1] - ylim.sec_SUMS[1])
+
+Plot1_18 <- Tog_Plotter %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  ggplot() + 
+  geom_col(aes(x = month, y = sum_rr_mm, fill = factor(year)), position = "dodge", size = 1.0) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  #geom_line(aes(x = month, y = gwb_q_mm), color = "black", size = 0.8) +
+  scale_y_continuous(name = "precipitation", # Features of the first axis
+  sec.axis = sec_axis(~ (. - a)/b, name = "discharge")) +  # Add a second axis and specify its features 
+  geom_smooth(aes(x = month, y = a + gwb_q_mm*b, group = factor(year)), color = "black", method = "gam", se = F) +
+  facet_grid(okoregion~ year, scales = "free") +
+  theme_bw() + xlab(NULL) + labs(fill ="year")
+
+ggsave("Figures/Precip_discharge_18.pdf", Plot1_18, width = 9, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Precip_discharge_18.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Precip_discharge_18.jpeg")
+
+
+# 2019/2021
+Plot1_19 <- Tog_Plotter %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  ggplot() + 
+  geom_col(aes(x = month, y = sum_rr_mm, fill = factor(year)), position = "dodge", size = 1.0) +
+  #geom_line(aes(x = month, y = gwb_q_mm), color = "black", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_continuous(name = "precipitation", # Features of the first axis
+  sec.axis = sec_axis(~ (. - a)/b, name = "discharge")) +  # Add a second axis and specify its features 
+  geom_smooth(aes(x = month, y = a + gwb_q_mm*b, group = factor(year)), color = "black", method = "gam", se = F) +
+  facet_grid(okoregion~ year, scales = "free") +
+  theme_bw() + xlab(NULL) + labs(fill ="year")
+
+ggsave("Figures/Precip_discharge_19.pdf", Plot1_19, width = 9, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Precip_discharge_19.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Precip_discharge_19.jpeg")
+
+
+# All
+Plot1_ALL <- Tog_Plotter %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  ggplot() + 
+  geom_col(aes(x = month, y = sum_rr_mm, fill = factor(year)), position = "dodge", size = 1.0) +
+  #geom_line(aes(x = month, y = a + gwb_q_mm*b), color = "black", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  geom_smooth(aes(x = month, y =a + gwb_q_mm*b, group = factor(year)), color = "black", method = "gam", se = F) +
+  facet_grid(year~ okoregion, scales = "free") +
+  scale_y_continuous(name = "precipitation", # Features of the first axis
+  sec.axis = sec_axis(~ (. - a)/b, name = "discharge")) +  # Add a second axis and specify its features 
+  theme_bw() + xlab(NULL) + labs(fill ="year")
+
+ggsave("Figures/Precip_discharge_ALL.pdf", Plot1_ALL, width = 6, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Precip_discharge_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Precip_discharge_ALL.jpeg")
+```
+

@@ -39,3 +39,19 @@
 
 ![Hydrologic variables from rivers sampled in all four years (2018/2019/2020/2021)](Figures/Hydrology_ALL.jpeg){fig-align="center" width="60%"}
 :::
+
+### Combined
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/Precip_discharge_18.jpeg){fig-align="center" width="80%"}
+
+### 2019/2021
+
+![](Figures/Precip_discharge_19.jpeg){fig-align="center" width="80%"}
+
+### 2018/2019/2020/2021
+
+![](Figures/Precip_discharge_ALL.jpeg){fig-align="center" width="60%"}
+:::

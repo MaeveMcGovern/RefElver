@@ -24,7 +24,7 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv")
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, rr:gwb_sssrel, Al_il_ug_L:Zn_ug_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, rr:gwb_sssrel, Al_il_ug_L:Zn_ug_L)) %>% drop_na()
 
 #mutate_at(vars(c(Al_il_ug_L:Zn_ug_L)),~scale(.))
 
@@ -542,7 +542,7 @@ rda_print_noele = function(x){
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
 
 
 # Envar
@@ -557,7 +557,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -573,7 +573,7 @@ All_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -587,7 +587,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -602,7 +602,7 @@ Phys_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2,mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -616,7 +616,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -631,7 +631,7 @@ Metals_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -646,7 +646,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -661,7 +661,7 @@ Metals2_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -676,7 +676,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -691,7 +691,7 @@ Ions_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -706,7 +706,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel)) 
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -722,7 +722,7 @@ Nutrients_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem_Climate %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
+  dplyr::select(c(month, year, area_km2, mean_elevation, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
@@ -737,7 +737,7 @@ Elevation <- scale(Elevation2)
 
 # Predictors
 Predictors <- Data %>% 
-  dplyr::select(c(month, year, watershed_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel))
+  dplyr::select(c(month, year, area_km2, mean_slope, mean_annual_gwb_q, rr, tm, gwb_q, gwb_sssrel))
 
 y <- purrr::map(Predictors, rda_print_noele) 
 
@@ -751,7 +751,7 @@ Carbon_t_noele <- bind_rows(unlist(y), .id = "run") %>%
 RDA_table <- rbind(All_t_noele, Phys_t_noele, Ions_t_noele, Metals_t_noele, Metals2_t_noele, Nutrients_t_noele, Carbon_t_noele) %>% 
   mutate(percent = proportion * 100) %>% 
   mutate(predictor = str_replace_all(predictor, ".Proportion", "")) %>% 
-  mutate(predictor = str_replace_all(predictor, "watershed_km2", "area_km2")) %>% 
+  mutate(predictor = str_replace_all(predictor, "area_km2", "area_km2")) %>% 
   mutate(predictor = str_replace_all(predictor, "mean", "m")) %>% 
   mutate(predictor = str_replace_all(predictor, "annual", "an")) %>% 
   dplyr::select(c(response, predictor, percent)) %>% 
@@ -912,10 +912,10 @@ jpeg::writeJPEG(bitmap, "Figures/LanBar2.jpeg")
 ```{r}
 # Dataset for calculating PCA
 Data <- Water_Chem_Climate %>% 
-  dplyr::select(c(site_id, watershed_km2: mean_annual_gwb_q)) %>% drop_na()
+  dplyr::select(c(site_id, area_km2: mean_annual_gwb_q)) %>% drop_na()
 
 Envar2 <- Data  %>% 
-  dplyr::select(c(watershed_km2: mean_annual_gwb_q)) %>% drop_na()
+  dplyr::select(c(area_km2: mean_annual_gwb_q)) %>% drop_na()
 Envar <- scale(Envar2)
 
 # PCA in Vegan

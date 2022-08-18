@@ -282,7 +282,8 @@ write_csv(Water_Chem, "Clean_Data/RefElv_WaterChem.csv")
 ```{r}
 DEM <- read_csv("Clean_Data/Intermediate/watershed_means.csv")
 Area <- read_csv("Clean_Data/Intermediate/watershed_info.csv")
-land_cover <- read_csv("Clean_Data/Intermediate/landcover_df.csv") 
+land_cover <- read_csv("Clean_Data/Intermediate/landcover_df.csv") %>% 
+   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
 
 X3 <- read_csv("Clean_Data/Intermediate/X3.csv")
 X6 <- read_csv("Clean_Data/Intermediate/X6.csv")
@@ -342,7 +343,15 @@ Station_Info4 <- full_join(Station_Info3, Y0) %>%
   mutate(rapportnavn = ifelse(grepl("_Lun", site_id), "Lun", rapportnavn)) %>%
   mutate(rapportnavn = ifelse(grepl("_Lei_b", site_id), "Lei_b", rapportnavn)) %>%
   mutate(rapportnavn = ifelse(grepl("_VesB", site_id), "VesB", rapportnavn)) %>% 
-  mutate(rapportnavn = ifelse(grepl("Bjo", site_id), "Bjo", rapportnavn))
+  mutate(rapportnavn = ifelse(grepl("Bjo", site_id), "Bjo", rapportnavn)) %>% 
+  mutate(Group = "incomplete") %>% 
+  mutate(Group = ifelse(grepl("F_212_1729_Lah|F_223_103_Sta|F_225_88_Bor|F_234_229_Mas|F_238_48_San|F_239_35_Ska|F_239_37_Kom|F_246_15_Sam|M_109_199_Dri|O_002_1673_Set|O_002_1933_Jo|O_002_2053_Sto|O_002_207_Mis|O_002_218_Teg|O_002_2398_Ott|O_002_620_Lei|O_008_79_Lom|O_008_90_Kja|O_015_1147_Kjo|O_015_687_Sma|O_015_920_Num|S_016_1617_Dig|V_035_56_Tjo|V_050_82_Bjo|V_053_38_Bot|V_062_266_Rau|V_073_78_Sme|V_074_178_Utl", site_id), "'18/'20", Group)) %>% 
+  mutate(Group =ifelse(grepl("M_105_36_Bre|M_120_27_Sto|M_123_499_Hom|M_128_169_Nod|M_128_208_Bol|M_128_55_Ims|M_139_15_Nor|M_139_219_San|M_139_50_Lur|M_142_6_Nor|M_151_17_Eit|M_151_197_Sim|M_151_203_Sus|N_195_59_Fla|N_197_25_Mam|N_198_53_Kob|N_206_18_Rot|S_017_17_Ror|S_019_242_Asl|S_019_571_Dal|S_020_238_Vat|S_020_244_Skj|S_021_1042_Lis|S_021_1187_Ves|S_025_327_San|S_026_640_Mol|V_027_139_Hal|V_094_102_Oyd", site_id), "'19/'21", Group)) %>% 
+  mutate(Group =ifelse(grepl("O_002_300_Atn_DAN03|O_002_305_Atn_DAN04|O_002_305_Atn_DAN11|O_002_1869_Dor", site_id), "'18/'19/'20/'21", Group)) %>% distinct() %>% 
+  filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) %>%# Remove clay rivers
+  filter(!grepl("S_021_1187_VesB", site_id)) %>% # Remove doubble
+   mutate(site_id = str_replace_all(site_id, "Smaa", "Sma"))
+
 
 Climate_tm <- read_csv("Clean_Data/Intermediate/Climate_Data.csv") %>% 
   filter(par =="tm") %>% 
@@ -380,16 +389,11 @@ X <- full_join(Climate_tm, Climate_rr)
 XX <- full_join(Climate_gwb_q, Climate_gwb_sssrel)
 XXX <- full_join(XX, Climate_gwb_sssrel2)
 XXXX <- full_join(X, XXX)
-XXXXX <- full_join(XXXX, land_cover) %>% 
-  mutate(site_id = str_replace_all(site_id, "-", "_"), site_id = str_replace_all(site_id, " ", ""),
-         site_id = str_replace_all(site_id, "ø", "o"), site_id = str_replace_all(site_id, "å", "a"),
-         site_id = str_replace_all(site_id, "á", "a"), site_id = str_replace_all(site_id, "æ", "ae"),
-         site_id = str_replace_all(site_id, "Å", "A"), site_id = str_replace_all(site_id, "Ø", "O"),
-         site_id = str_replace_all(site_id, "Æ", "AE")) 
+XXXXX <- full_join(XXXX, land_cover) 
 
 Station_Info <- full_join(Station_Info4, XXXXX) %>% 
-  janitor::clean_names() %>% 
-  dplyr::select(c(site_id, fylke, rapportnavn, latitude, longitude, area_km2 = watershed_km2, mean_elevation:woodland_scrub)) 
+  janitor::clean_names() %>% drop_na(group) %>% 
+  dplyr::select(c(site_id, fylke, rapportnavn, group, latitude, longitude, area_km2 = watershed_km2, mean_elevation:woodland_scrub)) 
 
 write_csv(Station_Info, file = "Clean_Data/Station_Info.csv")
 ```
@@ -412,8 +416,9 @@ Water_Clean <- read_csv("Clean_Data/RefElv_WaterChem.csv") %>%
           site_id = str_replace_all(site_id, "Å", "A"),
           site_id = str_replace_all(site_id, "Ø", "O"),
           site_id = str_replace_all(site_id, "Æ", "AE"),
-          site_id = str_replace_all(site_id, "S_021_1187_VesB", "S_021_1187_Ves"),
-          site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei"))
+          site_id = str_replace_all(site_id, "M_128_201_Lei_b", "M_128_201_Lei")) %>% 
+    filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) %>%# Remove clay rivers
+    filter(!grepl("S_021_1187_VesB", site_id)) 
 
 write_csv(Water_Clean, file = "Clean_Data/Intermediate/Water_processed.csv")
 ```
@@ -428,13 +433,7 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv")
 X <- full_join(Station_Info, Climate_Clean)
 
 Water_Chem_Climate <- full_join(X, Water_Clean) %>%
-  filter_at(vars(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l), any_vars(!is.na(.))) %>% 
-  filter(!grepl("M_128_201_Lei|O_002_604_Vik|O_002_2572_Lun", site_id)) %>% # Remove clay rivers
-  mutate(Group = "incomplete") %>% 
-  mutate(Group =ifelse(grepl("Bjo|Femangerelva|Komagelva|Lahpojohka|Lera|Maskejohka|Mistra|Setninga|Skallelva|Stabburselva|Store|Tegninga|Tjo",rapportnavn), "'18/'20", Group)) %>% 
-  mutate(Group =ifelse(grepl("Aslestadai|Bolaselva|Breineset|Daleaa|	
-Eiteraga|Flakstadvag|Halandselva|Imsa|Homla|Luru|Mammakjosen|Kobbvag|Molandsana|Nordaa|Nordfolda|Oydgardselva|Nodalselva|Sandvatn|Sanddola|Lislefjoddai|Rorholtfjorden|Rotsund|Simskardelva|Skjeggedalsana|Stordalselva|Susna|Vesterdalsani|Vatnedalselva",rapportnavn), "'19/'21", Group)) %>% 
-  mutate(Group =ifelse(grepl("Atna04|Atna11|Dorae",rapportnavn), "'18/'19/'20/'21", Group)) %>% distinct()
+  filter_at(vars(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l), any_vars(!is.na(.))) 
 
 summary(Water_Chem_Climate)
 write_csv(Water_Chem_Climate, file = "Clean_Data/Water_Chem_Climate.csv")

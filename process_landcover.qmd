@@ -79,8 +79,8 @@ writeRaster(veg_rcl, "Raw_Data/land_cover/land_cover_reclass.tif")
 saveRDS(veg_rcl, "Raw_Data/land_cover/land_cover_reclass.RData")
 ```
 
+# Calcualte and export land cover (% of each category) for each catchment individually.
 
-# Calcualte and export land cover (% of each category) for each catchment individually. 
 ```{r}
 # Load key files
 watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
@@ -172,23 +172,29 @@ landcover_df <- y %>%
          "Glacier" = "34",
          "Peat bogs" = "36", 
          "Water bodies" =  "41",
-         "Other" = "45") 
+         "Other" = "45") %>% 
+  mutate(site_id = str_replace_all(site_id, "-", "_"), 
+         site_id = str_replace_all(site_id, " ", ""),
+         site_id = str_replace_all(site_id, "ø", "o"), 
+         site_id = str_replace_all(site_id, "å", "a"),
+         site_id = str_replace_all(site_id, "á", "a"), 
+         site_id = str_replace_all(site_id, "æ", "ae"),
+         site_id = str_replace_all(site_id, "Å", "A"), 
+         site_id = str_replace_all(site_id, "Ø", "O"),
+         site_id = str_replace_all(site_id, "Æ", "AE")) 
 
 landcover_df[is.na(landcover_df)] = 0
 write_csv(landcover_df, file = "Clean_Data/Intermediate/landcover_df.csv")
 ```
 
-
-
-
-
-
 # Wetness Index
 
 Load files, crop to watershed and save tiff file.
+
 ```{r}
 # Load the wetness raster files from the wetness folder, crop to watershed and save as a tif file. This only needs to be run once! 
 watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+
 watershed70 = st_transform(watershed70, "EPSG:3035")
 
 readandproject = function(x){
@@ -216,9 +222,8 @@ writeRaster(wetness_proj, "Raw_Data/land_cover/wetness/wetness_all.tif")
 #saveRDS(m, "Raw_Data/land_cover/wetness/wetness_all.RData")
 ```
 
+# Calculate and export wetness index (% of each category) for each catchment individually. (((IN PREP)))
 
-
-# Calcualte and export wetness index (% of each category) for each catchment individually. (((IN PREP)))
 ```{r}
 # Load key files
 watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
@@ -270,10 +275,8 @@ wetness_df <- terra::extract(wetness_crop, vect(watershed70))
 write_csv(wetness_df, file = "Clean_Data/Intermediate/wetness_df.csv")
 ```
 
-
-
-
 # Buffer Zone: extract land cover from buffer. ####Not working yet--too many rivers?
+
 ```{r}
 rivers <- read_sf("Raw_Data/Shape_files/NVE_RefElv/Combined_Output/Hovedelv_all.shp")
 riverline_projected = st_transform(rivers, "EPSG:3035")
@@ -288,7 +291,9 @@ r50 <- rast(v50,res=10) # empty raster with the extent of the buffer shapefile a
 z50 <- rasterize(v50, r50) # rasterize the buffer
 names(z50)[1] <- "buff50" # Give the buffer a unique name
 ```
+
 # Buffer
+
 ```{r}
 # Load key files
 #watershed2 <- watershed70 %>% 
@@ -415,10 +420,6 @@ landcover_buffer_df[is.na(landcover_buffer_df)] = 0
 write_csv(landcover_df, file = "Clean_Data/Intermediate/landcover_buffer_df.csv")
 ```
 
-
-
-
-
 # Load Riparian zone land cover files
 
 ```{r}
@@ -481,4 +482,3 @@ watershed_class_proportion <- watershed_class_proportion %>%
   return(watershed_class_proportion)
   
 ```
-

@@ -17,7 +17,7 @@
 
 ### '18/'19/'20/'21
 
-![](Figures/Group3_Flow.jpeg){fig-align="center"}
+![](Figures/Group3_Flow.jpeg){fig-align="center" width="60%"}
 :::
 
 ## Fluxes
@@ -53,8 +53,8 @@
 :::
 
 ## Pearson's correlation
-::: panel-tabset
 
+::: panel-tabset
 ### 2018/2020
 
 ![](Figures/Corrplot_18.jpeg){fig-align="center" width="60%"}
@@ -66,5 +66,4 @@
 ### 2018/2019/2020/2021
 
 ![](Figures/Corrplot_ALL.jpeg){fig-align="center" width="60%"}
-
 :::
