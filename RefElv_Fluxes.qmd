@@ -62,7 +62,6 @@ write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 # simple_means
 # log_log_linear_regression
 # ospar_annual
-
 ```
 
 # Linear interpolation and flux calculation
@@ -937,7 +936,7 @@ Figure <- ggplot() +
             size = 1,
             colour = "black",
             fill = "transparent")+
-  geom_text(data = corr_pr_18,
+  geom_text(data = corr_slope_18,
             aes(variable, Predict, label = round(estimate, 2),
                 fontface = ifelse(sig == "Sig.", "bold", "plain")))+
   scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
@@ -997,7 +996,7 @@ Figure <- ggplot() +
             size = 1,
             colour = "black",
             fill = "transparent")+
-  geom_text(data = corr_pr_ALL,
+  geom_text(data = corr_slope_ALL,
             aes(variable, Predict, label = round(estimate, 2),
                 fontface = ifelse(sig == "Sig.", "bold", "plain")))+
   scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
