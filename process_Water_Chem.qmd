@@ -435,8 +435,19 @@ X <- full_join(Station_Info, Climate_Clean)
 Water_Chem_Climate <- full_join(X, Water_Clean) %>%
   filter_at(vars(Temp_C, Turbidity, Conductivity_mS_m, pH, Alkalinity_mmol_L, ANC_µEkv_L, Fe_ug_L, Cd_ug_L, Cu_ug_L, Cr_ug_L, Pb_ug_L, Ni_ug_L, Zn_ug_L, Al_ug_L, Al_ug_L, Al_il_ug_L, Al_l_ug_L, Al_r_ug_L, Mg_mg_L, K_mg_L, Ca_mg_L, SO4_mg_L, Na_mg_L, TotP_ug_L, TotN_ug_L, PO4_ug_L, NO3_ug_L, SiO2_mg_L, DOC_mg_L, TOC_mg_L, Water_Color_mgPt_l), any_vars(!is.na(.))) 
 
-summary(Water_Chem_Climate)
 write_csv(Water_Chem_Climate, file = "Clean_Data/Water_Chem_Climate.csv")
+
+### Select water chemistry variables
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
+  dplyr::select(c(site_id, Date, Temp_C, Ca_mg_L, pH, ANC_µEkv_L, 
+                  Fe_ug_L, DOC_mg_L, Water_Color_mgPt_l,
+                  TotP_ug_L, TotN_ug_L, NO3_ug_L)) %>% 
+  group_by(site_id, Date) %>% 
+  mutate(TN_TP = TotN_ug_L/TotP_ug_L) %>% 
+  mutate(DIN_TP = NO3_ug_L/TotP_ug_L) 
+
+Water_Chem_select <-full_join(Water_Chem_select, X)
+write_csv(Water_Chem_select, file = "Clean_Data/Water_Chem_select.csv")
 ```
 
 

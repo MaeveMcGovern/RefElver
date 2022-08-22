@@ -7,20 +7,8 @@
 
 ![Figure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5).](Figures/map_clusters2.jpeg){fig-align="center"}
 
-### 2018/2020
-
-![](Figures/Group1_Flow.jpeg)
-
-### 2019/2021
-
-![](Figures/Group2_Flow.jpeg){fig-align="center"}
-
-### '18/'19/'20/'21
-
-![](Figures/Group3_Flow.jpeg){fig-align="center" width="60%"}
+### Fluxes
 :::
-
-## Fluxes
 
 ::: panel-tabset
 ### 2018/2020
@@ -57,13 +45,13 @@
 ::: panel-tabset
 ### 2018/2020
 
-![](Figures/Corrplot_18.jpeg){fig-align="center" width="60%"}
+![Slope of Q/C plot vs catchment characteristics](Figures/Corrplot_18.jpeg){fig-align="center" width="80%"}
 
 ### 2019/2021
 
-![](Figures/Corrplot_19.jpeg){fig-align="center" width="60%"}
+![Slope of Q/C plot vs catchment characteristics](Figures/Corrplot_19.jpeg){fig-align="center" width="90%"}
 
 ### 2018/2019/2020/2021
 
-![](Figures/Corrplot_ALL.jpeg){fig-align="center" width="60%"}
+![Slope of Q/C plot vs catchment characteristics](Figures/Corrplot_ALL.jpeg){fig-align="center" width="80%"}
 :::
