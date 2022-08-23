@@ -9,8 +9,9 @@ library(mgcv)
 library(lubridate)
 library(jpeg)
 library(pdftools)
-Data <- read_csv("Clean_Data/RefElv_WaterChem.csv")
-Water_Chem_Climate <- read_csv("Clean_Data/Water_Chem_Climate.csv")
+
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv")
+Water_Chem_Climate
 ```
 
 
@@ -1280,4 +1281,346 @@ jpeg::writeJPEG(bitmap, "Figures/Ca.jpeg")
 ```
 
 
+# Waterchem select; by Ecoregion
+# Brownification
+```{r}
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv")
 
+# 2018/2020
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, Water_Color_mgPt_l, Fe_ug_L, DOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("DOC_mg_L", "Fe_ug_L", "Water_Color_mgPt_l"), 
+                        labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                   bquote('Fe'~ (μg~L^-1)), 
+                                   bquote('Water Color'~ (mgPt~L^-1))))
+
+Plot1 <- Wsel %>% 
+  filter(!okoregion %in% c("Midt-Norge", "Sorlandet")) %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_18_20_br.pdf", Plot1, width = 6, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_18_20_br.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_18_20_br.jpeg")
+
+# 2019/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, Water_Color_mgPt_l, Fe_ug_L, DOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("DOC_mg_L", "Fe_ug_L", "Water_Color_mgPt_l"), 
+                        labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                   bquote('Fe'~ (μg~L^-1)), 
+                                   bquote('Water Color'~ (mgPt~L^-1))))
+
+Wsel$okoregion <- factor(Wsel$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_19_21_br.pdf", Plot2, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_19_21_br.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_19_21_br.jpeg")
+
+
+# Wsel: 2018/2019/2020/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+ dplyr::select(c(site_id, year, month, okoregion, group, Water_Color_mgPt_l, Fe_ug_L, DOC_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("DOC_mg_L", "Fe_ug_L", "Water_Color_mgPt_l"), 
+                        labels = c(bquote('DOC'~ (mg~L^-1)), 
+                                   bquote('Fe'~ (μg~L^-1)), 
+                                   bquote('Water Color'~ (mgPt~L^-1))))
+
+Plot3 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_ALL_br.pdf", Plot3, width = 6.5, height = 2, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_ALL_br.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_ALL_br.jpeg")
+```
+
+
+
+# Acification
+```{r}
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv")
+
+# 2018/2020
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("Temp_C","pH", "ANC_µEkv_L", "Ca_mg_L"), 
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('pH'),
+                                   bquote('ANC'~ (µEkv~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1))))
+
+Plot1 <- Wsel %>% 
+  filter(!okoregion %in% c("Midt-Norge", "Sorlandet")) %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_18_20.pdf", Plot1, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_18_20.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_18_20.jpeg")
+
+
+# 2019/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("Temp_C","pH", "ANC_µEkv_L", "Ca_mg_L"), 
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('pH'),
+                                   bquote('ANC'~ (µEkv~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1))))
+
+Wsel$okoregion <- factor(Wsel$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_19_21.pdf", Plot2, width = 7, height = 5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_19_21.jpeg")
+
+
+# Wsel: 2018/2019/2020/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("Temp_C","pH", "ANC_µEkv_L", "Ca_mg_L"), 
+                        labels = c(bquote('Temp'~ (C)),
+                                   bquote('pH'),
+                                   bquote('ANC'~ (µEkv~L^-1)),
+                                   bquote('Ca'~ (mg~L^-1))))
+
+Plot3 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_ALL_acid.pdf", Plot3, width = 5.5, height = 3, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_ALL_acid.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_ALL_acid.jpeg")
+```
+
+
+
+# Nutrification
+
+```{r}
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv")
+
+# 2018/2020
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, NO3_ug_L)) %>% 
+  group_by(site_id, year, month) %>% 
+  mutate(TN_TP = TotN_ug_L/TotP_ug_L, DIN_TP =NO3_ug_L/TotP_ug_L) %>% ungroup() %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "TN_TP", "DIN_TP"), 
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)), 
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   "TN:TP", "NO3:TP"))
+
+Plot1 <- Wsel %>% 
+  filter(!okoregion %in% c("Midt-Norge", "Sorlandet")) %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_18_20_Nut.pdf", Plot1, width = 6, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_18_20_Nut.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_18_20_Nut.jpeg")
+
+
+# 2019/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+ dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, NO3_ug_L)) %>% 
+  group_by(site_id, year, month) %>% 
+  mutate(TN_TP = TotN_ug_L/TotP_ug_L, DIN_TP =NO3_ug_L/TotP_ug_L) %>% ungroup() %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>% drop_na()
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "TN_TP", "DIN_TP"), 
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)), 
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   "TN:TP", "NO3:TP"))
+
+Wsel$okoregion <- factor(Wsel$okoregion,
+                        levels = c("Midt-Norge", "Nord-Norge ytre", "Vest", "Sorlandet"),
+                        labels = c(bquote('Midt-Norge'),
+                                   bquote("Nord-Norge"),
+                                   bquote("Vest"),
+                                   bquote("Sorlandet")))
+
+Plot2 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_grid(Variable~okoregion, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =6, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_19_21_Nut.pdf", Plot2, width = 7, height = 6, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_19_21_Nut.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_19_21_Nut.jpeg")
+
+
+# Wsel: 2018/2019/2020/2021
+
+Wsel <- Water_Chem_select %>% 
+  mutate(year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2018", "2019", "2020", "2021")) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, group, TotP_ug_L, TotN_ug_L, NO3_ug_L)) %>% 
+  group_by(site_id, year, month) %>% 
+  mutate(TN_TP = TotN_ug_L/TotP_ug_L, DIN_TP =NO3_ug_L/TotP_ug_L) %>% ungroup() %>% 
+  pivot_longer(cols= -c(site_id, year, month, group, okoregion), names_to = "Variable", values_to = "Measurement") %>%  
+  drop_na()
+
+
+Wsel$Variable <- factor(Wsel$Variable,
+                        levels = c("TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "TN_TP", "DIN_TP"), 
+                        labels = c(bquote('TotP'~ (μg~L^-1)),
+                                   bquote('TotN'~ (μg~L^-1)), 
+                                   bquote('NO'[3]~ (μg~L^-1)),
+                                   "TN:TP", "NO3:TP"))
+
+Plot3 <- Wsel %>% 
+  ggplot(aes(x = month, y = Measurement, group = factor(year))) + 
+  geom_point(size = 0.5, color ="gray70", alpha = 0.4) +
+  scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
+  scale_y_log10 () + 
+  geom_smooth(aes(color = factor(year)), method = "gam", se = FALSE) +
+  facet_wrap(~Variable, scales = "free", labeller = label_parsed) +
+  theme_bw() +
+  xlab(NULL) +
+  labs(color ="year") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Wsel_ALL_Nut.pdf", Plot3, width = 7.3, height = 3.5, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Wsel_ALL_Nut.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Wsel_ALL_Nut.jpeg")
+```

@@ -399,7 +399,6 @@ bitmap <- pdf_render_page("Figures/Q_C.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Q_C.jpeg")
 ```
 
-
 # Slope and intercepts
 
 ```{r}
@@ -1176,7 +1175,7 @@ bitmap <- pdf_render_page("Figures/standard_flow_cluster1.pdf", page = 1, dpi = 
 jpeg::writeJPEG(bitmap, "Figures/standard_flow_cluster1.jpeg")
 ```
 
-# Flow curves + Map
+# Flow curves clusted + Map
 
 ```{r}
 library(ggspatial)
@@ -1217,3 +1216,10 @@ ggsave("Figures/map_clusters2.pdf", p, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/map_clusters2.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/map_clusters2.jpeg")
 ```
+
+
+# Seasonal standardized flux + totall annual flux
+```{r}
+
+```
+

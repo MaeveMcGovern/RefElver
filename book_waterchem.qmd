@@ -1,81 +1,51 @@
 # Water Chemistry {.unnumbered}
 
-## Physical
+## Brownification
 
 ::: panel-tabset
 ### 2018/2020
 
-![](Figures/Phys_18_20.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_18_20_br.jpeg)
 
 ### 2019/2021
 
-![](Figures/Phys_19_21.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_19_21_br.jpeg){fig-align="center"}
 
 ### 2018/2019/2020/2021
 
-![](Figures/Phys_ALL.jpeg){fig-align="center" width="85%"}
+![](Figures/Wsel_ALL_br.jpeg){fig-align="center"}
 :::
 
-## Ions
+## Acidification
 
 ::: panel-tabset
 ### 2018/2020
 
-![](Figures/Ions_18_20.jpeg){fig-align="center" width="65%"}
+![](Figures/Wsel_18_20.jpeg){fig-align="center"}
 
 ### 2019/2021
 
-![](Figures/Ions_19_21.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_19_21.jpeg){fig-align="center"}
 
 ### 2018/2019/2020/2021
 
-![](Figures/ions_ALL.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_ALL_acid.jpeg){fig-align="center"}
 :::
 
-## Aluminium & Iron
+## Nutrification
 
 ::: panel-tabset
 ### 2018/2020
 
-![](Figures/Metals2_18_20.jpeg){fig-align="center" width="65%"}
+![](Figures/Wsel_18_20_Nut.jpeg){fig-align="center"}
 
 ### 2019/2021
 
-![](Figures/Metals2_19_21.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_19_21_Nut.jpeg){fig-align="center"}
 
 ### 2018/2019/2020/2021
 
-![](Figures/Metals2_ALL.jpeg){fig-align="center" width="80%"}
+![](Figures/Wsel_ALL_Nut.jpeg){fig-align="center"}
 :::
 
-## Nutrients
-
-::: panel-tabset
-### 2018/2020
-
-![](Figures/Nutrients_18_20.jpeg){fig-align="center" width="65%"}
-
-### 2019/2021
-
-![](Figures/Nutrients_19_21.jpeg){fig-align="center" width="80%"}
-
-### 2018/2019/2020/2021
-
-![](Figures/Nutrients_ALL.jpeg){fig-align="center" width="80%"}
-:::
-
-## Carbon
-
-::: panel-tabset
-### 2018/2020
-
-![](Figures/Carbon_18_20.jpeg){fig-align="center" width="65%"}
-
-### 2019/2021
-
-![](Figures/Carbon_19_21.jpeg){fig-align="center" width="80%"}
-
-### 2018/2019/2020/2021
-
-![](Figures/Carbon_ALL.jpeg){fig-align="center" width="80%"}
-:::
+## 
