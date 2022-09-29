@@ -28,55 +28,6 @@
     "text": "All Data2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nOverview of raw climate data collected from all 79 catchments using NVE’s Grided Time Series (GTS). Values are extracted as the mean across each catchment area at a daily resolution, and then further aggregated to monthly mean (or sum in the case of precip).\n\n\n\n\n\n\n\nClimate variables from rivers sampled in 2018 & 2020\n\n\n\n\n\n\n\nClimate variables from rivers sampled in 2019 & 2021\n\n\n\n\n\n\n\nClimate variables from rivers sampled in all four years (2018/2019/2020/2021)"
   },
   {
-    "objectID": "book_waterchem.html",
-    "href": "book_waterchem.html",
-    "title": "Water Chemistry",
-    "section": "",
-    "text": "2018/20202019/20212018/2019/2020/2021"
-  },
-  {
-    "objectID": "book_waterchem.html#land-cover",
-    "href": "book_waterchem.html#land-cover",
-    "title": "Water Chemistry",
-    "section": "Land Cover",
-    "text": "Land Cover\n\nPhysicalIonsMetalsAluminumNutrientsCarbon"
-  },
-  {
-    "objectID": "book_multivariate.html",
-    "href": "book_multivariate.html",
-    "title": "Multivariate",
-    "section": "",
-    "text": "Catchment CharacteristicsLand CoverClimate"
-  },
-  {
-    "objectID": "book_multivariate.html#water-chem-groups",
-    "href": "book_multivariate.html#water-chem-groups",
-    "title": "Multivariate",
-    "section": "Water Chem Groups",
-    "text": "Water Chem Groups\n\nCatchment CharacteristicsLand CoverClimate"
-  },
-  {
-    "objectID": "book_fluxes.html",
-    "href": "book_fluxes.html",
-    "title": "Fluxes",
-    "section": "",
-    "text": "Flow Regimes\n\n\n\n\n\nFigure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5)."
-  },
-  {
-    "objectID": "book_drought.html",
-    "href": "book_drought.html",
-    "title": "Drought",
-    "section": "",
-    "text": "hypotheses:\n\nTemperature: increased water temperatures expected during drought. or, alternatively, decreased temperatures due to increased ground water contribution.\nAcidity: Expected acid pulse following periods of drought due to production of acidity (from oxidation of reduced S) in catchment soils, which will be flushed out post-drought.\nNutrients: increased retention in the catchment. Given lower loads, the river will be more nutrient limited.\nDOC/water color: Reduced DOC and water color following drought, and higher aromaticity of DOC.\nIons: Increased ions following drought (e.g. ca usually higher in winter due to more ground water and less surface flow)\nMetals: (drop?) Increased concentrations following drought if acidic pulse present.\n\nApproach: Compare dry (2018, 2021) and relatively wet (2019, 2020) years among the five ecoregions."
-  },
-  {
-    "objectID": "book_fluxes.html#fluxes",
-    "href": "book_fluxes.html#fluxes",
-    "title": "Fluxes",
-    "section": "Fluxes",
-    "text": "Fluxes\n\n2018/20202019/2021’18/’19/’20/’21"
-  },
-  {
     "objectID": "book_climate.html#hydrology",
     "href": "book_climate.html#hydrology",
     "title": "Climate & Hydrology",
@@ -84,53 +35,18 @@
     "text": "Hydrology\n\nAll Data2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nOverview of raw hydrological data collected from the catchment polygons from the NVE gridded time series. gwb_q = ‘Avrenning’ and gwb_sssrel = ‘vannmetning i jord’.\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in 2018 & 2020\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in 2019 & 2021\n\n\n\n\n\n\n\nHydrologic variables from rivers sampled in all four years (2018/2019/2020/2021)\n\n\n\n\n\n\nCombined\n\n2018/20202019/20212018/2019/2020/2021"
   },
   {
-    "objectID": "book_waterchem.html#ions",
-    "href": "book_waterchem.html#ions",
+    "objectID": "book_waterchem.html",
+    "href": "book_waterchem.html",
     "title": "Water Chemistry",
-    "section": "Ions",
-    "text": "Ions\n\n2018/20202019/20212018/2019/2020/2021"
+    "section": "",
+    "text": "2018/20202019/20212018/2019/2020/2021"
   },
   {
-    "objectID": "book_waterchem.html#aluminium-iron",
-    "href": "book_waterchem.html#aluminium-iron",
+    "objectID": "book_waterchem.html#acidification",
+    "href": "book_waterchem.html#acidification",
     "title": "Water Chemistry",
-    "section": "Aluminium & Iron",
-    "text": "Aluminium & Iron\n\n2018/20202019/20212018/2019/2020/2021"
-  },
-  {
-    "objectID": "book_waterchem.html#nutrients",
-    "href": "book_waterchem.html#nutrients",
-    "title": "Water Chemistry",
-    "section": "Nutrients",
-    "text": "Nutrients\n\n2018/20202019/20212018/2019/2020/2021"
-  },
-  {
-    "objectID": "book_waterchem.html#carbon",
-    "href": "book_waterchem.html#carbon",
-    "title": "Water Chemistry",
-    "section": "Carbon",
-    "text": "Carbon\n\n2018/20202019/20212018/2019/2020/2021"
-  },
-  {
-    "objectID": "book_fluxes.html#qc",
-    "href": "book_fluxes.html#qc",
-    "title": "Fluxes",
-    "section": "Q/C",
-    "text": "Q/C\n\n2018/20202019/20212018/2019/2020/2021"
-  },
-  {
-    "objectID": "book_fluxes.html#pearsons-correlation",
-    "href": "book_fluxes.html#pearsons-correlation",
-    "title": "Fluxes",
-    "section": "Pearson’s correlation",
-    "text": "Pearson’s correlation\n\n2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics\n\n\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics\n\n\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics"
-  },
-  {
-    "objectID": "book_waterchem.html#acification",
-    "href": "book_waterchem.html#acification",
-    "title": "Water Chemistry",
-    "section": "Acification",
-    "text": "Acification\n\n2018/20202019/20212018/2019/2020/2021"
+    "section": "Acidification",
+    "text": "Acidification\n\n2018/20202019/20212018/2019/2020/2021"
   },
   {
     "objectID": "book_waterchem.html#nutrification",
@@ -140,10 +56,59 @@
     "text": "Nutrification\n\n2018/20202019/20212018/2019/2020/2021"
   },
   {
-    "objectID": "book_waterchem.html#acidification",
-    "href": "book_waterchem.html#acidification",
-    "title": "Water Chemistry",
-    "section": "Acidification",
-    "text": "Acidification\n\n2018/20202019/20212018/2019/2020/2021"
+    "objectID": "book_multivariate.html",
+    "href": "book_multivariate.html",
+    "title": "Multivariate",
+    "section": "",
+    "text": "PCA: Catchment CharacteristicsCA: Land Cover\n\n\n PCA of catchment characteristics (scaled) for each individual reference river catchment.\n\n\n\nCorrespondence analysis (CA) of each river basin based on percent land cover."
+  },
+  {
+    "objectID": "book_multivariate.html#rda-all-variables",
+    "href": "book_multivariate.html#rda-all-variables",
+    "title": "Multivariate",
+    "section": "RDA: All Variables",
+    "text": "RDA: All Variables\n\nCatchment CharacteristicsLand CoverClimate\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)"
+  },
+  {
+    "objectID": "book_multivariate.html#water-chem-groups",
+    "href": "book_multivariate.html#water-chem-groups",
+    "title": "Multivariate",
+    "section": "Water Chem Groups",
+    "text": "Water Chem Groups\n\nCatchment CharacteristicsLand CoverClimate\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L)."
+  },
+  {
+    "objectID": "book_fluxes.html",
+    "href": "book_fluxes.html",
+    "title": "Fluxes",
+    "section": "",
+    "text": "Flow Regimes\n\n\n\n\n\nFigure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5)."
+  },
+  {
+    "objectID": "book_fluxes.html#fluxes",
+    "href": "book_fluxes.html#fluxes",
+    "title": "Fluxes",
+    "section": "Fluxes",
+    "text": "Fluxes\n\n2018/20202019/2021’18/’19/’20/’21"
+  },
+  {
+    "objectID": "book_fluxes.html#qc",
+    "href": "book_fluxes.html#qc",
+    "title": "Fluxes",
+    "section": "Q/C",
+    "text": "Q/C\n\n2018/20202019/2021\n\n\n\nBrowning\n\n\n\n\n\n\n\nNutrification\n\n\n\n\n\n\n\n\n\nBrowning\n\n\n\n\n\n\n\nNutrification\n\n\n\n\n\n\n\n\n\n\n2018/20202019/20212018/2019/2020/2021"
+  },
+  {
+    "objectID": "book_fluxes.html#pearsons-correlation",
+    "href": "book_fluxes.html#pearsons-correlation",
+    "title": "Fluxes",
+    "section": "Pearson’s correlation",
+    "text": "Pearson’s correlation\n\n2018/20202019/20212018/2019/2020/2021\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics\n\n\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics\n\n\n\n\n\n\n\nSlope of Q/C plot vs catchment characteristics"
+  },
+  {
+    "objectID": "book_drought.html",
+    "href": "book_drought.html",
+    "title": "Drought",
+    "section": "",
+    "text": "hypotheses:\n\nTemperature: increased water temperatures expected during drought. or, alternatively, decreased temperatures due to increased ground water contribution.\nAcidity: Expected acid pulse following periods of drought due to production of acidity (from oxidation of reduced S) in catchment soils, which will be flushed out post-drought.\nNutrients: increased retention in the catchment. Given lower loads, the river will be more nutrient limited.\nDOC/water color: Reduced DOC and water color following drought, and higher aromaticity of DOC.\nIons: Increased ions following drought (e.g. ca usually higher in winter due to more ground water and less surface flow)\nMetals: (drop?) Increased concentrations following drought if acidic pulse present.\n\nApproach: Compare dry (2018, 2021) and relatively wet (2019, 2020) years among the five ecoregions."
   }
 ]

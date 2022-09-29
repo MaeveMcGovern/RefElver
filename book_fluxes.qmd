@@ -29,6 +29,28 @@
 ::: panel-tabset
 ### 2018/2020
 
+#### Browning
+
+![](Figures/daily_flux_v_QBrown.jpeg){fig-align="center" width="80%"}
+
+#### Nutrification
+
+![](Figures/daily_flux_v_QNut.jpeg){fig-align="center" width="80%"}
+
+### 2019/2021
+
+#### Browning
+
+![](Figures/daily_flux_v_QNut_2019.jpeg){fig-align="center" width="80%"}
+
+#### Nutrification
+
+![](Figures/daily_flux_v_QBrown_2019.jpeg){fig-align="center" width="80%"}
+:::
+
+::: panel-tabset
+### 2018/2020
+
 ![](Figures/lm_dots_18.jpeg){fig-align="center" width="80%"}
 
 ### 2019/2021

@@ -1,19 +1,37 @@
 # Multivariate {.unnumbered}
 
-## All Variables
+::: panel-tabset
+### PCA: Catchment Characteristics
+
+![](Figures/Catchment_PCA.jpeg) PCA of catchment characteristics (scaled) for each individual reference river catchment.
+
+### CA: Land Cover
+
+![](Figures/Catchment_CA.jpeg)
+
+Correspondence analysis (CA) of each river basin based on percent land cover.
+:::
+
+## RDA: All Variables
 
 ::: panel-tabset
 ### Catchment Characteristics
 
 ![](Figures/multibar_all.jpeg){fig-align="center" width="50%"}
 
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)
+
 ### Land Cover
 
 ![](Figures/multibar3_all.jpeg){fig-align="center" width="50%"}
 
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)
+
 ### Climate
 
 ![](Figures/multibar2_all.jpeg){fig-align="center" width="50%"}
+
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (including DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L, TotP_ug_L, TotN_ug_L, NO3_ug_L, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)
 :::
 
 ## Water Chem Groups
@@ -23,11 +41,17 @@
 
 ![](Figures/multibar.jpeg){fig-align="center" width="75%"}
 
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).
+
 ### Land Cover
 
 ![](Figures/multibar3.jpeg){fig-align="center" width="80%"}
 
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).
+
 ### Climate
 
 ![](Figures/multibar2.jpeg){fig-align="center" width="70%"}
+
+Results of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).
 :::
