@@ -344,11 +344,11 @@ Nuts_L <- bind_rows(unlist(y), .id = "run") %>%
 Data <- Water_Chem %>%
   mutate(month = month(Date)) %>% 
   mutate(year = year(Date)) %>% 
-  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel,gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, Temp_C, pH, ANC_µEkv_L, Ca_mg_L)) %>% drop_na()
+  dplyr::select(c(site_id, month, year,  area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel,gwb_sssrel, broad_leaved_forest, moors_and_heathland, bare_rocks, sparse_vegetation, peat_bogs, water_bodies, coniferous_forest, mixed_forest, agriculture, woodland_scrub, rr, tm, gwb_q, pH, ANC_µEkv_L, Ca_mg_L)) %>% drop_na()
 
 # Envar
 Envar2 <- Data  %>% 
-  dplyr::select(c(Temp_C, pH, ANC_µEkv_L, Ca_mg_L)) %>% drop_na()
+  dplyr::select(c(pH, ANC_µEkv_L, Ca_mg_L)) %>% drop_na()
 Envar <- scale(Envar2) 
 
 # Predictors

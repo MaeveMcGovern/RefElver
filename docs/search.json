@@ -74,7 +74,7 @@
     "href": "book_multivariate.html#water-chem-groups",
     "title": "Multivariate",
     "section": "Water Chem Groups",
-    "text": "Water Chem Groups\n\nCatchment CharacteristicsLand CoverClimate\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L)."
+    "text": "Water Chem Groups\n\nCatchment CharacteristicsLand CoverClimate\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = pH, ANC_µEkv_L, Ca_mg_L).\n\n\n\n\n\n\n\nResults of RDA for each of the catchment variables in predicting water chemistry parameters (Brownification = DOC_mg_L, Water_Color_mgPt_l, Fe_ug_L; Nutrification = TotP_ug_L, TotN_ug_L, NO3_ug_L; Acidification = Temp_C, pH, ANC_µEkv_L, Ca_mg_L)."
   },
   {
     "objectID": "book_fluxes.html",
@@ -110,5 +110,12 @@
     "title": "Drought",
     "section": "",
     "text": "hypotheses:\n\nTemperature: increased water temperatures expected during drought. or, alternatively, decreased temperatures due to increased ground water contribution.\nAcidity: Expected acid pulse following periods of drought due to production of acidity (from oxidation of reduced S) in catchment soils, which will be flushed out post-drought.\nNutrients: increased retention in the catchment. Given lower loads, the river will be more nutrient limited.\nDOC/water color: Reduced DOC and water color following drought, and higher aromaticity of DOC.\nIons: Increased ions following drought (e.g. ca usually higher in winter due to more ground water and less surface flow)\nMetals: (drop?) Increased concentrations following drought if acidic pulse present.\n\nApproach: Compare dry (2018, 2021) and relatively wet (2019, 2020) years among the five ecoregions."
+  },
+  {
+    "objectID": "book_waterchem.html#logratios",
+    "href": "book_waterchem.html#logratios",
+    "title": "Water Chemistry",
+    "section": "LogRatios",
+    "text": "LogRatios\n\n2018/2020"
   }
 ]
