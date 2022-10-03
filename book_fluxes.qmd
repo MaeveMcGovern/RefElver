@@ -15,9 +15,13 @@
 
 ![](Figures/Annual_Flux_18_20.jpeg){fig-align="center"}
 
+![](Figures/monthly_Flux_18_20_bda.jpeg)
+
 ### 2019/2021
 
 ![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
+
+![](Figures/monthly_Flux_19_21_bda.jpeg)
 
 ### '18/'19/'20/'21
 
