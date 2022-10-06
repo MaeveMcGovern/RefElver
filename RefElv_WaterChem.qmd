@@ -11,7 +11,6 @@ library(jpeg)
 library(pdftools)
 
 Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv")
-Water_Chem_Climate
 ```
 
 
@@ -1630,81 +1629,148 @@ jpeg::writeJPEG(bitmap, "Figures/Wsel_ALL_Nut.jpeg")
 
 ## Nutrients
 ```{r}
+library("RColorBrewer")
 Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv") 
+X <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>% 
+  filter(par == "gwb_sssrel") %>% 
+  filter(year == "2018") %>% 
+#  group_by(okoregion, year) %>% 
+  mutate(soil_moisture = value_mean) %>% 
+  dplyr::select(c(site_id, soil_moisture, month))
 
+Water_Chem2 <- full_join(Water_Chem_select, X)
 # Doubles need to be removed before ratios between 2018 and 2020 can be calculated
 # F_238_48_San & O_002_2053_Sto #set/oct  change 2018-09-30 to 2018-10-01
 # O_015_687_Sma & O_015_920_Num #jun/july change 2020-06-30 to 2020-07-01
 # F_234_229_Mas #oct/nov change 2018-10-30 to 2018-11-01
 
 # TP
-TP_Ratio <- Water_Chem_select %>% 
-  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>%
-  mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
-   mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as.Date("2018-11-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+TP_Ratio <- Water_Chem2 %>% 
+  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as_date("2018-10-01"), as_date(Date)),
+         Date = as_date(Date), 
+         Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as_date("2020-07-01"), as_date(Date)), 
+         Date = as_date(Date), 
+         Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as_date("2018-11-01"), as_date(Date)),
+         Date = as_date(Date),
+         Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(TotP_ug_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, TotP_ug_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotP_ug_L,  soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = TotP_ug_L) %>% 
   group_by(site_id, month) %>% 
-  mutate(TP = log(`2018`/`2020`)) %>% 
-  dplyr::select(c(site_id, month,okoregion,TP))
+  mutate(TP = log10(`2018`/`2020`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,TP,  soil_moisture))
            
-TN_Ratio <- Water_Chem_select %>% 
-  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>%
-  mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
-   mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as.Date("2018-11-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+TN_Ratio <- Water_Chem2 %>% 
+  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as_date("2018-10-01"), as_date(Date)),
+         Date = as_date(Date), 
+         Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as_date("2020-07-01"), as_date(Date)), 
+         Date = as_date(Date), 
+         Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as_date("2018-11-01"), as_date(Date)),
+         Date = as_date(Date),
+         Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>%  
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(TotN_ug_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, TotN_ug_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotN_ug_L,  soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = TotN_ug_L) %>% 
   group_by(site_id, month) %>% 
-  mutate(TN = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month, okoregion, TN)
+  mutate(TN = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, TN,  soil_moisture)
 
 # Nitrate
-NO3_Ratio <- Water_Chem_select %>% 
-  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>%
-  mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
-   mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as.Date("2018-11-01"), as.Date(Date))) %>%
-  mutate(Date = as.Date(Date)) %>% 
-  mutate(Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+NO3_Ratio <- Water_Chem2 %>% 
+ mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as_date("2018-10-01"), as_date(Date)),
+         Date = as_date(Date), 
+         Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as_date("2020-07-01"), as_date(Date)), 
+         Date = as_date(Date), 
+         Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as_date("2018-11-01"), as_date(Date)),
+         Date = as_date(Date),
+         Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(NO3_ug_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L,  soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = NO3_ug_L) %>% 
   group_by(site_id, month) %>% 
-  mutate(NO3 = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month,okoregion, NO3)
+  mutate(NO3 = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month,okoregion, NO3,  soil_moisture)
+
+NP_RatioP <- Water_Chem2 %>% 
+ mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as_date("2018-10-01"), as_date(Date)),
+         Date = as_date(Date), 
+         Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as_date("2020-07-01"), as_date(Date)), 
+         Date = as_date(Date), 
+         Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as_date("2018-11-01"), as_date(Date)),
+         Date = as_date(Date),
+         Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) %>% 
+  distinct() %>% drop_na(NO3_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L, TotP_ug_L, soil_moisture)) %>% 
+  group_by(site_id, year, month, okoregion) %>% 
+  mutate(NP_Ratio = NO3_ug_L/TotP_ug_L) %>% 
+  ungroup() %>% 
+  dplyr::select(-c(NO3_ug_L, TotP_ug_L)) %>% 
+  pivot_wider(names_from = year, values_from = NP_Ratio) %>% 
+  group_by(site_id, month) %>% 
+  mutate(NP_Ratio = log10(`2018`/`2020`)) %>% ungroup %>% 
+  dplyr::select(c(site_id, month,okoregion, NP_Ratio,  soil_moisture))
            
 X <- full_join(TP_Ratio, TN_Ratio)
-XX <- full_join(X, NO3_Ratio) %>% 
-  pivot_longer(cols= c(TP, TN, NO3), names_to = "variable", values_to = "logratio_18_20") %>% 
+XX <- full_join(NP_RatioP, NO3_Ratio) 
+
+data <- full_join(X, XX) %>% 
+  pivot_longer(cols= c(TP, TN, NO3,NP_Ratio), names_to = "variable", values_to = "logratio_18_20") %>% 
   drop_na() 
 
-Plot <- XX %>% 
-  ggplot(aes(y = logratio_18_20, x = month, color = month)) +
-  geom_point() +
-  ylab("log([2018]:[2020]") + xlab(NULL) +
-  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
-  facet_grid(okoregion~variable) +
-  theme_bw() + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) 
+data$variable <- factor(data$variable, 
+                       levels = c("NO3", "TN", "TP", "NP_Ratio"),
+                       labels = c(bquote('NO'[3]),
+                                  bquote("TotN"), 
+                                  bquote("TotP"), 
+                                  bquote('NO'[3]~':TotP')))
 
-ggsave("Figures/logratio_18_20.pdf", Plot, width = 6.5, height = 5, bg = "white", device = cairo_pdf)
+# T-tests
+library(broom)
+library(caret)
+library(glue)
+
+my.t.test.p.value <- function(...) {
+    obj<-try(t.test(...), silent=TRUE)
+    if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+ }
+
+T_testR <- data %>%
+  dplyr::select(site_id, okoregion, month, variable, logratio_18_20) %>% 
+  ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
+  unite("ID", okoregion, month, variable, sep = "-", remove = TRUE) %>% 
+  nest(data = -c(ID)) %>%  
+  mutate(t_test = map(data, ~my.t.test.p.value(.x$logratio_18_20))) %>% 
+  dplyr::select(-c(data)) %>% 
+  unnest(t_test) %>% 
+  mutate(p_value = round(t_test, 4)) %>% 
+  dplyr::select(c(ID, p_value)) %>% 
+  filter(p_value < 0.05) %>% 
+  mutate(sign = "*") %>% 
+  separate(ID, c("okoregion", "month", "variable"), sep = "-")
+
+
+# Plot
+library(scales)
+Plot <- ggplot() +
+  geom_point(data = data, aes(y = logratio_18_20, x = month, color = soil_moisture/100)) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
+  facet_grid(okoregion~variable,labeller = label_parsed) +
+  scale_colour_gradient2(low = "red", mid = "red", high = "white", labels = percent) +
+  theme_bw() +
+  ylab(bquote('log'[10]~"(2018:2020)")) + xlab(NULL) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  geom_text(data = T_testR, aes(y = 1.5, x = month, label = sign), size = 6, color = "black") +
+  labs(color = "soil moisture")
+
+ggsave("Figures/logratio_18_20.pdf", Plot, width = 9.5, height = 5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/logratio_18_20.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/logratio_18_20.jpeg")
 ```
@@ -1713,15 +1779,13 @@ jpeg::writeJPEG(bitmap, "Figures/logratio_18_20.jpeg")
 ```{r}
 # Fe_ug_L, DOC_mg_L, Water_Color_mgPt_l
 
-Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv") 
-
 # Doubles need to be removed before ratios between 2018 and 2020 can be calculated
 # F_238_48_San & O_002_2053_Sto #set/oct  change 2018-09-30 to 2018-10-01
 # O_015_687_Sma & O_015_920_Num #jun/july change 2020-06-30 to 2020-07-01
 # F_234_229_Mas #oct/nov change 2018-10-30 to 2018-11-01
-names(Water_Chem_select)
+
 # TP
-DOC_Ratio <- Water_Chem_select %>% 
+DOC_Ratio <- Water_Chem2 %>% 
     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>%
   mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
@@ -1732,13 +1796,13 @@ DOC_Ratio <- Water_Chem_select %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(DOC_mg_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, DOC_mg_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, DOC_mg_L,  soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = DOC_mg_L) %>% 
   group_by(site_id, month) %>% 
-  mutate(DOC = log(`2018`/`2020`)) %>% 
-  dplyr::select(c(site_id, month,okoregion,DOC))
+  mutate(DOC = log10(`2018`/`2020`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,DOC, soil_moisture))
            
-Color_Ratio <- Water_Chem_select %>% 
+Color_Ratio <- Water_Chem2 %>% 
     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>%
   mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
@@ -1749,40 +1813,73 @@ Color_Ratio <- Water_Chem_select %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(Water_Color_mgPt_l) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Water_Color_mgPt_l)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Water_Color_mgPt_l, soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = Water_Color_mgPt_l) %>% 
   group_by(site_id, month) %>% 
-  mutate(Color = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month, okoregion, Color)
+  mutate(Color = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, Color, soil_moisture)
 
-# Nitrate
-Fe_Ratio <- Water_Chem_select %>% 
+Fe_Ratio <- Water_Chem2 %>% 
+  mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
+  mutate(Date = as.Date(Date)) %>%
+  mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
+   mutate(Date = as.Date(Date)) %>% 
+  mutate(Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as.Date("2018-11-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>% 
   mutate(Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(Fe_ug_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Fe_ug_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Fe_ug_L, soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = Fe_ug_L) %>% 
   group_by(site_id, month) %>% 
-  mutate(Fe = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month,okoregion, Fe)
+  mutate(Fe = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month,okoregion, Fe, soil_moisture)
            
 X <- full_join(DOC_Ratio, Color_Ratio)
-XX <- full_join(X, Fe_Ratio) %>% 
+data <- full_join(X, Fe_Ratio) %>% 
   pivot_longer(cols= c(DOC, Color, Fe), names_to = "variable", values_to = "logratio_18_20") %>% 
   drop_na() 
 
-Plot2 <- XX %>% 
-  ggplot(aes(y = logratio_18_20, x = month, color = month)) +
-  geom_point() +
-  ylab("log([2018]:[2020]") + xlab(NULL) +
-  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
-  facet_grid(okoregion~variable) +
-  theme_bw() + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) 
 
-ggsave("Figures/logratio_18_20_brown.pdf", Plot2, width = 6.5, height = 5, bg = "white", device = cairo_pdf)
+# T-tests
+library(broom)
+library(caret)
+library(glue)
+
+my.t.test.p.value <- function(...) {
+    obj<-try(t.test(...), silent=TRUE)
+    if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+ }
+
+T_testR <- data %>%
+  dplyr::select(site_id, okoregion, month, variable, logratio_18_20) %>% 
+  ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
+  unite("ID", okoregion, month, variable, sep = "-", remove = TRUE) %>% 
+  nest(data = -c(ID)) %>%  
+  mutate(t_test = map(data, ~my.t.test.p.value(.x$logratio_18_20))) %>% 
+  dplyr::select(-c(data)) %>% 
+  unnest(t_test) %>% 
+  mutate(p_value = round(t_test, 4)) %>% 
+  dplyr::select(c(ID, p_value)) %>% 
+  filter(p_value < 0.05) %>% 
+  mutate(sign = "*") %>% 
+  separate(ID, c("okoregion", "month", "variable"), sep = "-")
+
+# Plot
+library(scales)
+Plot2 <- ggplot() +
+  geom_point(data = data, aes(y = logratio_18_20, x = month, color = soil_moisture/100)) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
+  facet_grid(okoregion~variable,labeller = label_parsed) +
+  scale_colour_gradient2(low = "red", mid = "red", high = "white", labels = percent) +
+  theme_bw() +
+  ylab(bquote('log'[10]~"(2018:2020)")) + xlab(NULL) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  geom_text(data = T_testR, aes(y = 0.7, x = month, label = sign), size = 6, color = "black") +
+  labs(color = "soil moisture")
+
+ggsave("Figures/logratio_18_20_brown.pdf", Plot2, width = 9.5, height = 5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/logratio_18_20_brown.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/logratio_18_20_brown.jpeg")
 ```
@@ -1791,12 +1888,9 @@ jpeg::writeJPEG(bitmap, "Figures/logratio_18_20_brown.jpeg")
 ## Acidification
 ```{r}
 # Temp_C, Ca_mg_L, pH, ANC_µEkv_L, 
-Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv") 
 
-# Doubles need to be removed before ratios between 
-names(Water_Chem_select)
 # TP
-Temp_Ratio <- Water_Chem_select %>% 
+Temp_Ratio <- Water_Chem2 %>% 
     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>%
   mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
@@ -1807,13 +1901,13 @@ Temp_Ratio <- Water_Chem_select %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(Temp_C) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Temp_C)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Temp_C, soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = Temp_C) %>% 
   group_by(site_id, month) %>% 
   mutate(Temp = log(`2018`/`2020`)) %>% 
-  dplyr::select(c(site_id, month,okoregion,Temp))
+  dplyr::select(c(site_id, month,okoregion,Temp, soil_moisture))
            
-Ca_Ratio <- Water_Chem_select %>% 
+Ca_Ratio <- Water_Chem2 %>% 
     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>%
   mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
@@ -1824,14 +1918,14 @@ Ca_Ratio <- Water_Chem_select %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(Ca_mg_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, Ca_mg_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Ca_mg_L, soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = Ca_mg_L) %>% 
   group_by(site_id, month) %>% 
   mutate(Ca = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month, okoregion, Ca)
+  dplyr::select(site_id, month, okoregion, Ca, soil_moisture)
 
 # ANC
-ANC_Ratio <- Water_Chem_select %>% 
+ANC_Ratio <- Water_Chem2 %>% 
     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as.Date("2018-10-01"), as.Date(Date))) %>%
   mutate(Date = as.Date(Date)) %>%
   mutate(Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as.Date("2020-07-01"), as.Date(Date))) %>%
@@ -1842,27 +1936,55 @@ ANC_Ratio <- Water_Chem_select %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   distinct() %>% drop_na(ANC_µEkv_L) %>% 
-  dplyr::select(c(site_id, year, month, okoregion, ANC_µEkv_L)) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, ANC_µEkv_L, soil_moisture)) %>% 
   pivot_wider(names_from = year, values_from = ANC_µEkv_L) %>% 
   group_by(site_id, month) %>% 
   mutate(ANC = log(`2018`/`2020`)) %>% 
-  dplyr::select(site_id, month,okoregion, ANC)
+  dplyr::select(site_id, month,okoregion, ANC, soil_moisture)
            
 X <- full_join(Temp_Ratio, Ca_Ratio)
-XX <- full_join(X, ANC_Ratio) %>% 
+data <- full_join(X, ANC_Ratio) %>% 
   pivot_longer(cols= c(Temp, Ca, ANC), names_to = "variable", values_to = "logratio_18_20") %>% 
   drop_na() 
 
-Plot3 <- XX %>% 
-  ggplot(aes(y = logratio_18_20, x = month, color = month)) +
-  geom_point() +
-  ylab("log([2018]:[2020]") + xlab(NULL) +
-  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
-  facet_grid(okoregion~variable) +
-  theme_bw() + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) 
+# T-tests
+library(broom)
+library(caret)
+library(glue)
+library(scales)
 
-ggsave("Figures/logratio_18_20_Acid.pdf", Plot3, width = 6.5, height = 5, bg = "white", device = cairo_pdf)
+my.t.test.p.value <- function(...) {
+    obj<-try(t.test(...), silent=TRUE)
+    if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+ }
+
+T_testR <- data %>%
+  dplyr::select(site_id, okoregion, month, variable, logratio_18_20) %>% 
+  ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
+  unite("ID", okoregion, month, variable, sep = "-", remove = TRUE) %>% 
+  nest(data = -c(ID)) %>%  
+  mutate(t_test = map(data, ~my.t.test.p.value(.x$logratio_18_20))) %>% 
+  dplyr::select(-c(data)) %>% 
+  unnest(t_test) %>% 
+  mutate(p_value = round(t_test, 4)) %>% 
+  dplyr::select(c(ID, p_value)) %>% 
+  filter(p_value < 0.05) %>% 
+  mutate(sign = "*") %>% 
+  separate(ID, c("okoregion", "month", "variable"), sep = "-")
+
+# Plot
+Plot3 <- ggplot() +
+  geom_point(data = data, aes(y = logratio_18_20, x = month, color = soil_moisture/100)) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
+  facet_grid(okoregion~variable,labeller = label_parsed) +
+  scale_colour_gradient2(low = "red", mid = "red", high = "white", labels = percent) +
+  theme_bw() +
+  ylab(bquote('log'[10]~"(2018:2020)")) + xlab(NULL) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  geom_text(data = T_testR, aes(y = 1.5, x = month, label = sign), size = 6, color = "black") +
+  labs(color = "soil moisture")
+
+ggsave("Figures/logratio_18_20_Acid.pdf", Plot3, width = 9.5, height = 5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/logratio_18_20_Acid.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/logratio_18_20_Acid.jpeg")
 ```
@@ -1931,13 +2053,13 @@ XX <- full_join(X, NO3_Ratio) %>%
 Plot <- XX %>% 
   ggplot(aes(y = logratio_19_21, x = month, color = month)) +
   geom_point() +
-  ylab("log([2019]:[2021]") + xlab(NULL) +
+  ylab("log10([2019]:[2021]") + xlab(NULL) +
   geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
   facet_grid(okoregion~variable) +
   theme_bw() + theme(legend.position = "none") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) 
 
-ggsave("Figures/logratio_19_21.pdf", Plot, width = 6.5, height = 5, bg = "white", device = cairo_pdf)
+ggsave("Figures/logratio_19_21.pdf", Plot, width = 7.5, height = 5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/logratio_19_21.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/logratio_19_21.jpeg")
 ```
@@ -1962,6 +2084,9 @@ DOC_Ratio <- Water_Chem_select %>%
   filter(year %in% c("2019", "2021")) %>% 
   distinct() %>% drop_na(DOC_mg_L) %>% 
   dplyr::select(c(site_id, year, month, okoregion, DOC_mg_L)) %>% 
+    dplyr::group_by(site_id, month, okoregion, year) %>%
+    dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+    dplyr::filter(n > 1L)
   pivot_wider(names_from = year, values_from = DOC_mg_L) %>% 
   group_by(site_id, month) %>% 
   mutate(DOC = log(`2019`/`2021`)) %>% 

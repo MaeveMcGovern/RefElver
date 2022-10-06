@@ -51,12 +51,7 @@
 ## LogRatios
 
 ::: panel-tabset
-
 ### 2018/2020
 
-![](Figures/logratio_18_20_brown.jpeg){fig-align="center"}
-![](Figures/logratio_18_20_Acid.jpeg){fig-align="center"} 
-![](Figures/logratio_18_20.jpeg){fig-align="center"}
-
-
+![](Figures/logratio_18_20_brown.jpeg){fig-align="center"} ![](Figures/logratio_18_20_Acid.jpeg){fig-align="center"} ![](Figures/logratio_18_20.jpeg){fig-align="center"}
 :::
