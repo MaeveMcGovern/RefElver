@@ -439,7 +439,7 @@ write_csv(Water_Chem_Climate, file = "Clean_Data/Water_Chem_Climate.csv")
 
 ### Select water chemistry variables
 Water_Chem_select <- read_csv("Clean_Data/Water_Chem_Climate.csv") %>% 
-  dplyr::select(c(site_id, Date, Temp_C, Ca_mg_L, pH, ANC_µEkv_L, 
+  dplyr::select(c(site_id, Date, Temp_C, Ca_mg_L, pH, ANC_µEkv_L, SO4_mg_L,
                   Fe_ug_L, DOC_mg_L, Water_Color_mgPt_l,
                   TotP_ug_L, TotN_ug_L, NO3_ug_L)) %>% 
   group_by(site_id, Date) %>% 

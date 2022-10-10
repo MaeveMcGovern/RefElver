@@ -1626,6 +1626,418 @@ jpeg::writeJPEG(bitmap, "Figures/Wsel_ALL_Nut.jpeg")
 
 
 # Log Ratios 2018/2021
+```{r}
+library("RColorBrewer")
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv") 
+X <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>% 
+  filter(par == "gwb_sssrel") %>% 
+  filter(year == "2018") %>% 
+  mutate(soil_moisture = value_mean) %>% 
+  dplyr::select(c(site_id, soil_moisture, month)) %>% 
+  group_by(site_id, month) %>% 
+  summarise(soil_moisture =  mean(soil_moisture))
+
+# Doubles need to be removed before ratios between 2018 and 2020 can be calculated
+# F_238_48_San & O_002_2053_Sto #set/oct  change 2018-09-30 to 2018-10-01
+# O_015_687_Sma & O_015_920_Num #jun/july change 2020-06-30 to 2020-07-01
+# F_234_229_Mas #oct/nov change 2018-10-30 to 2018-11-01
+
+Water_Chem2_2018 <- full_join(Water_Chem_select, X) %>%
+    filter(okoregion %in% c("Finnmark", "Ostlandet", "Vest")) %>% 
+     mutate(Date = ifelse(grepl("F_238_48_San|O_002_2053_Sto", site_id) & Date == "2018-09-30", as_date("2018-10-01"), as_date(Date)),
+         Date = as_date(Date), 
+         Date = ifelse(grepl("O_015_687_Sma|O_015_920_Num", site_id) & Date == "2020-06-30", as_date("2020-07-01"), as_date(Date)), 
+         Date = as_date(Date), 
+         Date = ifelse(site_id == "F_234_229_Mas" & Date == "2018-10-30", as_date("2018-11-01"), as_date(Date)),
+         Date = as_date(Date),
+         Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+  filter(group %in% c("'18/'20")) %>% 
+  filter(year %in% c("2018", "2020")) 
+
+
+
+TP_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(TotP_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotP_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = TotP_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(TP = log10(`2018`/`2020`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,TP,  soil_moisture))
+           
+TN_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(TotN_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotN_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = TotN_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(TN = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, TN,  soil_moisture)
+
+NO3_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(NO3_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = NO3_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(NO3 = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month,okoregion, NO3,  soil_moisture)
+
+NP_RatioP <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(NO3_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L, TotP_ug_L, soil_moisture)) %>% 
+  group_by(site_id, year, month, okoregion) %>% 
+  mutate(NP_Ratio = NO3_ug_L/TotP_ug_L) %>% 
+  ungroup() %>% 
+  dplyr::select(-c(NO3_ug_L, TotP_ug_L)) %>% 
+  pivot_wider(names_from = year, values_from = NP_Ratio) %>% 
+  group_by(site_id, month) %>% 
+  mutate(NP_Ratio = log10(`2018`/`2020`)) %>% ungroup %>% 
+  dplyr::select(c(site_id, month,okoregion, NP_Ratio,  soil_moisture))
+           
+DOC_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(DOC_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, DOC_mg_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = DOC_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(DOC = log10(`2018`/`2020`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,DOC, soil_moisture))
+           
+Color_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(Water_Color_mgPt_l) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Water_Color_mgPt_l, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Water_Color_mgPt_l) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Color = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, Color, soil_moisture)
+
+Fe_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(Fe_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Fe_ug_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Fe_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Fe = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month,okoregion, Fe, soil_moisture)
+
+Temp_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(Temp_C) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Temp_C, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Temp_C) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Temp = log10(`2018`/`2020`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,Temp, soil_moisture))
+           
+Ca_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(Ca_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Ca_mg_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Ca_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Ca = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, Ca, soil_moisture)
+
+pH_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(pH) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, pH, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = pH) %>% 
+  group_by(site_id, month) %>% 
+  mutate(pH = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, pH, soil_moisture)
+
+SO4_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(SO4_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, SO4_mg_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = SO4_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(SO4 = log10(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month, okoregion, SO4, soil_moisture)
+
+ANC_Ratio <- Water_Chem2_2018 %>% 
+  distinct() %>% drop_na(ANC_µEkv_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, ANC_µEkv_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = ANC_µEkv_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(ANC = log(`2018`/`2020`)) %>% 
+  dplyr::select(site_id, month,okoregion, ANC, soil_moisture)
+           
+X <- full_join(Temp_Ratio, Ca_Ratio)
+XX <- full_join(pH_Ratio, SO4_Ratio)
+XX2 <- full_join(X,XX)
+Y <- full_join(DOC_Ratio, Color_Ratio)
+YY <- full_join(Y, Fe_Ratio) 
+YY2 <- full_join(Y,YY)
+Z <- full_join(TP_Ratio, TN_Ratio)
+ZZ <- full_join(NP_RatioP, NO3_Ratio) 
+ZZ2 <- full_join(Z, ZZ) 
+XY<- full_join(XX2, YY2) 
+
+data <-  full_join(XY, ZZ2) %>% 
+  pivot_longer(cols= c(TP, TN, NO3, NP_Ratio, Temp, Ca, SO4, pH, DOC, Color, Fe), names_to = "variable", values_to = "logratio_18_20") %>% 
+  drop_na() 
+
+data$variable <- factor(data$variable,
+                       levels = c("Temp", "pH", "Ca", "SO4", "DOC", "Color", "Fe", "NO3", "TN", "TP", "NP_Ratio"),
+                       labels = c("Temp", "pH", "Ca",  bquote('SO'[4]), "DOC", "Color", "Fe",
+                                  bquote('NO'[3]),
+                                  bquote("TotN"), 
+                                  bquote("TotP"), 
+                                  bquote('NO'[3]~':TotP')))
+
+# T-tests
+library(broom)
+library(caret)
+library(glue)
+
+my.t.test.p.value <- function(...) {
+    obj<-try(t.test(...), silent=TRUE)
+    if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+ }
+
+T_testR <- data %>%
+  dplyr::select(site_id, okoregion, month, variable, logratio_18_20) %>% 
+  ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
+  unite("ID", okoregion, month, variable, sep = "-", remove = TRUE) %>% 
+  nest(data = -c(ID)) %>%  
+  mutate(t_test = map(data, ~my.t.test.p.value(.x$logratio_18_20))) %>% 
+  dplyr::select(-c(data)) %>% 
+  unnest(t_test) %>% 
+  mutate(p_value = round(t_test, 4)) %>% 
+  dplyr::select(c(ID, p_value)) %>% 
+  filter(p_value < 0.05) %>% 
+  mutate(sign = "*") %>% 
+  separate(ID, c("okoregion", "month", "variable"), sep = "-")
+
+# Plot
+library(scales)
+Plot2 <- ggplot() +
+  geom_point(data = data, aes(y = logratio_18_20, x = month, color = soil_moisture/100)) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
+  facet_grid(variable~okoregion, labeller = label_parsed) +
+  scale_colour_gradient2(low = "red", mid = "red", high = "white", labels = percent) +
+  theme_bw() +
+  ylab(bquote('log'[10]~"(2018:2020)")) + xlab(NULL) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  geom_text(data = T_testR, aes(y = 0.7, x = month, label = sign), size = 6, color = "black") +
+  labs(color = "soil moisture")
+
+ggsave("Figures/logratio_18_20_ALL.pdf", Plot2, width = 8, height = 12, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/logratio_18_20_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/logratio_18_20_ALL.jpeg")
+```
+
+
+
+# Log Ratios 2019/2021
+```{r}
+library("RColorBrewer")
+Water_Chem_select <- read_csv("Clean_Data/Water_Chem_select.csv") %>% 
+  mutate(month= month(Date, label = T))
+X <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>% 
+  filter(par == "gwb_sssrel") %>% 
+  filter(year == "2021") %>% 
+  mutate(soil_moisture = value_mean) %>% 
+  dplyr::select(c(site_id, soil_moisture, month)) %>% 
+  group_by(site_id, month) %>% 
+  summarise(soil_moisture =  mean(soil_moisture))
+
+# Doubles need to be removed before ratios between 2019 and 2021 can be calculated
+# M_120_27_Sto  Feb   2021   	2021-02-28 to 2021-03-01
+# S_017_17_Ror   Feb  2021    2021-02-28 to 2021-03-01
+# M_120_27_Sto  June  2021    2021-06-29  to 2021-07-01
+# M_123_499_Hom  June 2021    2021-06-30  to 2021-07-01
+# V_027_139_Hal  Aug  2021    2021-08-31  to 2021-09-01
+# M_120_27_Sto  Nov   2021    2021-09-28  to 2021-10-01
+# M_120_27_Sto  Sept  2021    2021-11-30  to 2021-12-01
+# M_105_36_Bre  Feb   2019    2019-02-27 to 2019-03-01
+# S_021_1042_Lis Mar  2019    2019-03-27 to 2019-04-01
+# S_021_1187_Ves Mar  2019....2019-03-27 to 2019-04-01
+# M_139_219_San Apr   2019    2019-04-30 to 2019-05-01
+# M_139_50_Lur   Apr  2019    2019-04-30 to 2019-05-01
+# N_195_59_Fla  Jul   2019  	2019-07-29 to 2019-08-01
+# S_025_327_San   Jul 2019    2019-07-30 to 2019-08-01
+# S_026_640_Mol   JUl 2019  	2019-07-30 to 2019-08-01
+
+Water_Chem2_2019 <- full_join(Water_Chem_select, X) %>%
+  mutate(year = year(Date)) %>% distinct() %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(Date = ifelse(grepl("M_120_27_Sto|S_017_17_Ror", site_id) & Date == "2021-02-28", as_date("2021-03-01"), as_date(Date)), Date = as_date(Date), 
+  Date = ifelse(grepl("M_120_27_Sto", site_id) & Date == "2021-06-29", as_date("2021-07-01"), as_date(Date)),Date = as_date(Date), 
+  Date = ifelse(site_id == "M_123_499_Hom" & Date == "2021-06-30", as_date("2021-07-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(site_id == "V_027_139_Hal" & Date == "2021-08-31", as_date("2021-09-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(site_id == "M_120_27_Sto" & Date == "2021-09-28", as_date("2021-10-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(site_id == "M_120_27_Sto" & Date == "2021-11-30", as_date("2021-12-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(site_id == "M_105_36_Bre" & Date == "2019-02-27", as_date("2019-03-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(grepl("S_021_1042_Lis|S_021_1187_Ves", site_id) & Date == "2019-03-27", as_date("2019-04-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(grepl("M_139_219_San|M_139_50_Lur", site_id) & Date == "2019-04-30", as_date("2019-05-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(site_id == "N_195_59_Fla" & Date == "2019-07-29", as_date("2019-08-01"), as_date(Date)), Date = as_date(Date),
+  Date = ifelse(grepl("S_025_327_San|S_026_640_Mol", site_id) & Date == "2019-07-30", as_date("2019-08-01"), as_date(Date)), Date = as_date(Date),
+  Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE))
+
+
+TP_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(TotP_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotP_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = TotP_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(TP = log10(`2019`/`2021`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,TP,  soil_moisture))
+           
+TN_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(TotN_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, TotN_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = TotN_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(TN = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month, okoregion, TN,  soil_moisture)
+
+NO3_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(NO3_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = NO3_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(NO3 = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month,okoregion, NO3,  soil_moisture)
+
+NP_RatioP <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(NO3_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, NO3_ug_L, TotP_ug_L, soil_moisture)) %>% 
+  group_by(site_id, year, month, okoregion) %>% 
+  mutate(NP_Ratio = NO3_ug_L/TotP_ug_L) %>% 
+  ungroup() %>% 
+  dplyr::select(-c(NO3_ug_L, TotP_ug_L)) %>% 
+  pivot_wider(names_from = year, values_from = NP_Ratio) %>% 
+  group_by(site_id, month) %>% 
+  mutate(NP_Ratio = log10(`2019`/`2021`)) %>% ungroup %>% 
+  dplyr::select(c(site_id, month,okoregion, NP_Ratio,  soil_moisture))
+           
+DOC_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(DOC_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, DOC_mg_L,  soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = DOC_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(DOC = log10(`2019`/`2021`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,DOC, soil_moisture))
+           
+Color_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(Water_Color_mgPt_l) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Water_Color_mgPt_l, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Water_Color_mgPt_l) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Color = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month, okoregion, Color, soil_moisture)
+
+Fe_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(Fe_ug_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Fe_ug_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Fe_ug_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Fe = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month,okoregion, Fe, soil_moisture)
+
+Temp_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(Temp_C) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Temp_C, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Temp_C) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Temp = log10(`2019`/`2021`)) %>% 
+  dplyr::select(c(site_id, month,okoregion,Temp, soil_moisture))
+           
+Ca_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(Ca_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, Ca_mg_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = Ca_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(Ca = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month, okoregion, Ca, soil_moisture)
+
+pH_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(pH) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, pH, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = pH) %>% 
+  group_by(site_id, month) %>% 
+  mutate(pH = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month, okoregion, pH, soil_moisture)
+
+SO4_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(SO4_mg_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, SO4_mg_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = SO4_mg_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(SO4 = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month, okoregion, SO4, soil_moisture)
+
+ANC_Ratio <- Water_Chem2_2019 %>% 
+  distinct() %>% drop_na(ANC_µEkv_L) %>% 
+  dplyr::select(c(site_id, year, month, okoregion, ANC_µEkv_L, soil_moisture)) %>% 
+  pivot_wider(names_from = year, values_from = ANC_µEkv_L) %>% 
+  group_by(site_id, month) %>% 
+  mutate(ANC = log10(`2019`/`2021`)) %>% 
+  dplyr::select(site_id, month,okoregion, ANC, soil_moisture)
+           
+X <- full_join(Temp_Ratio, Ca_Ratio)
+XX <- full_join(pH_Ratio, SO4_Ratio)
+XX2 <- full_join(X,XX)
+Y <- full_join(DOC_Ratio, Color_Ratio)
+YY <- full_join(Y, Fe_Ratio) 
+YY2 <- full_join(Y,YY)
+Z <- full_join(TP_Ratio, TN_Ratio)
+ZZ <- full_join(NP_RatioP, NO3_Ratio) 
+ZZ2 <- full_join(Z, ZZ) 
+XY<- full_join(XX2, YY2) 
+
+data <-  full_join(XY, ZZ2) %>% 
+  pivot_longer(cols= c(TP, TN, NO3, NP_Ratio, Temp, Ca, SO4, pH, DOC, Color, Fe), names_to = "variable", values_to = "logratio_19_21") %>% 
+  drop_na() %>% distinct()
+
+data$variable <- factor(data$variable,
+  levels = c("Temp", "pH", "Ca", "SO4", "DOC", "Color", "Fe", "NO3", "TN", "TP", "NP_Ratio"),
+  labels = c("Temp", "pH", "Ca", bquote('SO'[4]), "DOC", "Color", "Fe", bquote('NO'[3]), bquote("TotN"), bquote("TotP"), bquote('NO'[3]~':TotP')))
+
+data$okoregion <- factor(data$okoregion,
+  levels = c("Midt-Norge", "Nord-Norge ytre", "Sorlandet", "Vest"),
+  labels = c("Midt-Norge", "Nord-Norge", "Sorlandet", "Vest"))
+
+# T-tests
+library(broom)
+library(caret)
+library(glue)
+
+my.t.test.p.value <- function(...) {
+    obj<-try(t.test(...), silent=TRUE)
+    if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+ }
+
+T_testR <- data %>%
+  dplyr::select(site_id, okoregion, month, variable, logratio_19_21) %>% 
+  ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
+  unite("ID", okoregion, month, variable, sep = "_", remove = TRUE) %>% 
+  nest(data = -c(ID)) %>%  
+  mutate(t_test = map(data, ~my.t.test.p.value(.x$logratio_19_21))) %>% 
+  dplyr::select(-c(data)) %>% 
+  unnest(t_test) %>% 
+  mutate(p_value = round(t_test, 4)) %>% 
+  dplyr::select(c(ID, p_value)) %>% 
+  filter(p_value < 0.05) %>% 
+  mutate(sign = "*") %>% 
+  separate(ID, c("okoregion", "month", "variable"), sep = "_")
+
+# Plot
+library(scales)
+Plot2 <- ggplot() +
+  geom_point(data = data, aes(y = logratio_19_21, x = month, color = soil_moisture/100)) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.5) +
+  facet_grid(variable~okoregion, labeller = label_parsed) +
+  scale_colour_gradient2(low = "red", mid = "red", high = "white", labels = percent) +
+  theme_bw() +
+  ylab(bquote('log'[10]~"(2019:2021)")) + xlab(NULL) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  geom_text(data = T_testR, aes(y = 0.7, x = month, label = sign), size = 6, color = "black") +
+  labs(color = "soil moisture")
+
+ggsave("Figures/logratio_19_21_ALL.pdf", Plot2, width = 10, height = 12, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/logratio_19_21_ALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/logratio_19_21_ALL.jpeg")
+```
+
+
+
 
 ## Nutrients
 ```{r}
