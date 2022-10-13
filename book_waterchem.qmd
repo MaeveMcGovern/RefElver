@@ -1,59 +1,13 @@
 # Water Chemistry {.unnumbered}
 
-## Brownification
-
-::: panel-tabset
-### 2018/2020
-
-![](Figures/Wsel_18_20_br.jpeg)
-
-### 2019/2021
-
-![](Figures/Wsel_19_21_br.jpeg){fig-align="center"}
-
-### 2018/2019/2020/2021
-
-![](Figures/Wsel_ALL_br.jpeg){fig-align="center"}
-:::
-
-## Acidification
-
-::: panel-tabset
-### 2018/2020
-
-![](Figures/Wsel_18_20.jpeg){fig-align="center"}
-
-### 2019/2021
-
-![](Figures/Wsel_19_21.jpeg){fig-align="center"}
-
-### 2018/2019/2020/2021
-
-![](Figures/Wsel_ALL_acid.jpeg){fig-align="center"}
-:::
-
-## Nutrification
-
-::: panel-tabset
-### 2018/2020
-
-![](Figures/Wsel_18_20_Nut.jpeg){fig-align="center"}
-
-### 2019/2021
-
-![](Figures/Wsel_19_21_Nut.jpeg){fig-align="center"}
-
-### 2018/2019/2020/2021
-
-![](Figures/Wsel_ALL_Nut.jpeg){fig-align="center"}
-:::
-
 ## LogRatios
 
 ::: panel-tabset
 ### 2018/2020
 
 ![](Figures/logratio_18_20_ALL.jpeg){fig-align="center"}
+
+### 2019/2021
 
 ![](Figures/logratio_19_21_ALL.jpeg){fig-align="center"}
 :::

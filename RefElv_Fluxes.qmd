@@ -9,23 +9,34 @@ knitr::opts_chunk$set(echo=F, message=F, warning=F)
 
 # Load libraries
 library(tidyverse)
-library(sf)
+library(broom)
+library(fs)
+library(caret)
+#library(sf)
 library(terra)
 library(units)
-library(raster)
-library(rgeos)
-library(tmap)
+#library(raster)
+#library(rgeos)
+#library(tmap)
 library(lubridate)
 library(jpeg)
 library(pdftools)
-library(arrow)
+#library(arrow)
 library(zoo)
 library(patchwork)
+library(ggh4x)
+library(Hmisc)
+library(ggstance)
+
+#library(kmlShape)
+#library(ggspatial)
+#library("rnaturalearth")
+#library("rnaturalearthdata")
+library(RColorBrewer)
 
 #library(dichromat)
 #colorschemes
 ```
-
 
 # files for juptyerhub
 
@@ -43,7 +54,7 @@ write_csv(DOC_data, "Clean_Data/Intermediate/DOC_data.csv")
 Drought_Daily3 <- read_csv("Clean_Data/Intermediate/Drought_Data_daily2.csv") %>% 
     filter(grepl("2018", date)) %>% 
     filter(site_id == "F_212_1729_Lah") %>% 
-    dplyr::select(date, flow_m3ps) 
+    dplyr::select(date, Q) 
 
 write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 
@@ -55,7 +66,7 @@ write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 
 # NivaPy's stats module includes an estimate_fluxes function, which provides basic tools for calculating riverine fluxes/loads (this functionality will be expanded over time). For a description of what's currently available, use the help system, as described above:
   
-# We will compare the results for annual fluxes from three different flux estimation procedures for TOC at Langtjern. First, however, we need to rename some columns in our data: as described in the help file above, the estimate_fluxes function expects the discharge column to be named flow_m3/s (not flow_m3ps) and the chemistry data to be named e.g. TOC_mg/l (not TOC_mgpl). This can easily be changed:
+# We will compare the results for annual fluxes from three different flux estimation procedures for TOC at Langtjern. First, however, we need to rename some columns in our data: as described in the help file above, the estimate_fluxes function expects the discharge column to be named flow_m3/s (not Q) and the chemistry data to be named e.g. TOC_mg/l (not TOC_mgpl). This can easily be changed:
 
 # We now loop over the three methods of estimating fluxes and join the results into a single dataframe (using similar techniques to those described above). This code is a little more complicated than anything else in this notebook, but it's mostly a matter of combining ideas introduced above with basic Python syntax for looping and merging data.
   
@@ -68,16 +79,13 @@ write_csv(Drought_Daily3, "Clean_Data/Intermediate/Drought_Daily3.csv")
 # Linear interpolation and flux calculation
 
 ```{r}
-
 Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily.csv") %>%
-  dplyr::select(c(site_id, par, datetime, value_mean)) %>% 
   separate(datetime, c("date", "Time"), sep = " ") %>% 
-  filter(par =="Q") %>% 
+  filter(par =="Q") %>%  # unit = L_day
+  dplyr::select(c(site_id, par, date, value_mean)) %>% 
+  distinct() %>% 
   pivot_wider(names_from ="par", values_from = "value_mean") %>% 
-  group_by(site_id, date) %>% 
-  mutate(flow_m3ps = Q/11574.1) %>% 
-  ungroup() %>% 
-  dplyr::select(site_id, date, flow_m3ps) %>% 
+  dplyr::select(site_id, date, Q) %>% 
   mutate(date = ymd(date)) 
 
 write_csv(Drought_Daily, "Clean_Data/Intermediate/Drought_Data_daily2.csv")
@@ -86,10 +94,10 @@ Drought_Daily <- read_csv("Clean_Data/Intermediate/Drought_Data_daily2.csv")
 
 Water_data <- Water_Chem_select %>% 
   ungroup() %>% 
-  dplyr::select(site_id, date=Date, Ca_mg_L, Fe_ug_L, DOC_mg_L, TotP_ug_L, TotN_ug_L, NO3_ug_L) 
+  dplyr::select(site_id, date=Date, Color_mg_L = Water_Color_mgPt_l, Ca_mg_L, Fe_ug_L, DOC_mg_L, TotP_ug_L, TotN_ug_L, NO3_ug_L) 
 
 interp_data <- full_join(Drought_Daily, Water_data) %>% 
-  drop_na(flow_m3ps)
+  drop_na(Q)
 
 # Daily concentrations (linear interpolation)
 
@@ -99,14 +107,14 @@ df_2017 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
+  mutate(flux = concentrations * Q) %>%  
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 
 monthly_flux_2017 <- df_2017 %>% 
   ungroup() %>% 
@@ -127,15 +135,14 @@ df_2018 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-
+  mutate(flux = concentrations * Q) %>% 
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 monthly_flux_2018 <- df_2018 %>% 
   ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
@@ -155,15 +162,14 @@ df_2019 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-
+  mutate(flux = concentrations * Q) %>% 
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 monthly_flux_2019 <- df_2019 %>% 
   ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
@@ -182,15 +188,14 @@ df_2020 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-
+  mutate(flux = concentrations*Q) %>% 
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 monthly_flux_2020 <- df_2020 %>% 
   ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
@@ -210,15 +215,14 @@ df_2021 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-
+  mutate(flux = concentrations * Q) %>% 
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 monthly_flux_2021 <- df_2021 %>% 
   ungroup() %>% 
   dplyr::select(c(site_id, variable, flux, year, month)) %>% 
@@ -238,15 +242,14 @@ df_2022 <- interp_data %>%
   mutate(date = ymd(date)) %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>% 
-  pivot_longer(cols = -c(site_id, date, flow_m3ps, year, month), values_to = "concentrations", names_to = "variable") %>%
+  pivot_longer(cols = -c(site_id, date, Q, year, month), values_to = "concentrations", names_to = "variable") %>%
   group_by(site_id, variable) %>% 
   mutate(concentrations = na.approx(concentrations, x = date, rule = 2, na.rm = FALSE)) %>% 
   drop_na(concentrations) %>% 
   group_by(site_id, variable, date) %>% 
-  mutate(flux = concentrations * flow_m3ps*86400) %>% 
-  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000, flux)) %>% 
-  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000, flux)) 
-
+  mutate(flux = concentrations * Q) %>% 
+  mutate(flux = ifelse(grepl("mg_L", variable), flux/1000000000, flux)) %>% #mg/day to tonnes/day
+  mutate(flux = ifelse(grepl("ug_L", variable), flux/1000000000000, flux)) #ug/day to tonnes/day
 
 monthly_flux_2022 <- df_2022 %>% 
   ungroup() %>% 
@@ -287,41 +290,56 @@ annual_flux_all <- read_csv("Clean_Data/annual_flux_all.csv") %>%
 Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
   dplyr::select(site_id, rapportnavn, okoregion, group) 
 
-options(scipen = 99999999)
-Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
-  filter(group %in% c("'19/'21")) %>% 
-  filter(year %in% c("2019", "2021")) %>% 
-  mutate(year = as.character(year)) %>% 
-  ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
-  geom_boxplot(outlier.shape =  NA,alpha = 0.7, width = 0.5) +
-  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
-  scale_y_log10() + 
-  facet_wrap(~variable, scales = "free", ncol = 3) +
-  theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
-  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
-
-ggsave("Figures/Annual_Flux_19_21.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
-bitmap <- pdf_render_page("Figures/Annual_Flux_19_21.pdf", page = 1, dpi = 300)
-jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_19_21.jpeg")
-
-options(scipen = 99999999)
-Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+Data76 <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   mutate(year = as.character(year)) %>% 
+  filter(okoregion %in% c("Finnmark", "Ostlandet", "Vest")) %>% 
+  filter(variable != "Color")
+
+Data76$variable <- factor(Data76$variable, 
+    levels = c("DOC", "Fe", "TotP", "TotN", "NO3", "Ca"),
+    labels = c("DOC", "Fe",  "TotP", "TotN", "NO3", "Ca"))
+
+Data76$okoregion <- factor(Data76$okoregion, 
+    levels = c("Finnmark", "Ostlandet", "Vest"),
+    labels = c("Finnmark", "Østlandet", "Vestlandet"))
+  
+  
+options(scipen = 99999999)
+Plot <- Data76 %>% 
   ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
-  geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
-  scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
+  geom_boxplot(outlier.shape =  NA,alpha = 0.7, width = 0.5) +
+    scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
 
 ggsave("Figures/Annual_Flux_18_20.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/Annual_Flux_18_20.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_18_20.jpeg")
+
+
+options(scipen = 99999999)
+Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(variable != "Color") %>% 
+  filter(group %in% c("'19/'21")) %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(year = as.character(year)) %>% 
+  ggplot(aes(x = okoregion, y = annual_flux, fill = year)) +
+  geom_boxplot(outlier.shape =  NA, alpha = 0.7, width = 0.5) +
+  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
+  scale_y_log10() + 
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  theme_bw() +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
+  theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
+
+ggsave("Figures/Annual_Flux_19_21.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Annual_Flux_19_21.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_19_21.jpeg")
 
 
 options(scipen = 99999999)
@@ -335,14 +353,13 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
 
 ggsave("Figures/Annual_Flux_All4.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/Annual_Flux_All4.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_All4.jpeg")
 ```
-
 
 ```{r}
 # Annual Flux
@@ -364,7 +381,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
 
 ggsave("Figures/Annual_Flux_19_21_bda.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
@@ -382,7 +399,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
 
 ggsave("Figures/Annual_Flux_18_20_bda.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
@@ -401,7 +418,7 @@ Plot <- full_join(annual_flux_all, Station_Info) %>% drop_na() %>%
   scale_y_log10() + 
   facet_wrap(~variable, scales = "free", ncol = 3) +
   theme_bw() +
-  xlab(NULL) + ylab("Annual Flux (Kg)") +
+  xlab(NULL) + ylab("Annual Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) 
 
 ggsave("Figures/Annual_Flux_All4_bda.pdf", Plot, width = 6, height = 4, bg = "white", device = cairo_pdf)
@@ -409,8 +426,8 @@ bitmap <- pdf_render_page("Figures/Annual_Flux_All4_bda.pdf", page = 1, dpi = 30
 jpeg::writeJPEG(bitmap, "Figures/Annual_Flux_All4_bda.jpeg")
 ```
 
+# Monthly Flux: compare 2018 to 2020
 
-# Monthly Flux before/during/after
 ```{r}
 
 # Monthly Flux
@@ -437,18 +454,17 @@ data45 <- Station_Info2 %>% drop_na() %>%
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
   filter(okoregion %in% c("Finnmark", "Ostlandet", "Vest")) %>% 
-  mutate(year = as.character(year)) 
+  mutate(year = as.character(year)) %>% 
+  dplyr::select(-c(day, Date)) %>% distinct()
 
-data45$variable <- factor(data45$variable,
-                        levels = c("DOC", "Fe", "Ca", "NO3", "TotN", "TotP", "N_P"),
-                        labels = c("DOC", "Fe", "Ca", bquote('NO'[3]),  "TotN", "TotP", bquote('NO'[3]~':TotP')))
-
+library(rstatix)
 T_testR <- data45 %>%
   dplyr::select(site_id, okoregion, month, variable, monthly_flux, year) %>% 
+  mutate(monthly_flux = log10(monthly_flux)) %>% 
   ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
   unite("ID", okoregion, month, variable, sep = "-", remove = TRUE) %>% 
   nest(data = -c(ID)) %>%  
-  mutate(t_test = map(data, ~tidy(t.test(.x$monthly_flux~.x$year)))) %>% 
+  mutate(t_test = map(data, ~tidy(pairwise.t.test(.x$monthly_flux ,.x$year, paired = TRUE, p.adjust.method="bonferroni")))) %>% 
   dplyr::select(-c(data)) %>% 
   unnest(t_test) %>% 
   mutate(p_value = round(p.value, 4)) %>% 
@@ -457,16 +473,32 @@ T_testR <- data45 %>%
   mutate(sign = "*") %>% 
   separate(ID, c("okoregion", "month", "variable"), sep = "-")
 
+data45$variable_f <- factor(data45$variable,
+                        levels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "N_P", "Ca"),
+                        labels = c("DOC", "Fe", "Color", "TotP", "TotN", bquote('NO'[3]), bquote('NO'[3]~':TotP'), "Ca"))
+
+T_testR$variable_f <- factor(T_testR$variable,
+                        levels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "N_P", "Ca"),
+                        labels = c("DOC", "Fe", "Color", "TotP", "TotN", bquote('NO'[3]), bquote('NO'[3]~':TotP'), "Ca"))
+
+
+T_testR$okoregion <- factor(T_testR$okoregion,
+                            levels = c("Finnmark", "Ostlandet", "Vest"),
+                            labels = c("Finnmark", "Østlandet", "Vestlandet"))
+
+data45$okoregion <- factor(data45$okoregion,
+                            levels = c("Finnmark", "Ostlandet", "Vest"),
+                            labels = c("Finnmark", "Østlandet", "Vestlandet"))
 
 options(scipen = 99999999)
 Plot <- ggplot() +
   geom_boxplot(data = data45, aes(x = month, y = monthly_flux, fill = year, color = year), outlier.shape =  NA,alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
   scale_color_manual(values=c("#FF8000", "#264EFF")) +
-  scale_y_log10(name = "Monthly Flux (Kg)") + 
-  facet_grid(variable~okoregion, labeller = label_parsed) +
+  scale_y_log10(name = "Monthly Flux (tonnes)") + 
+  facet_grid(variable_f~okoregion, labeller = label_parsed) +
   theme_bw() +
-  xlab(NULL) + ylab("Monthly Flux (Kg)") +
+  xlab(NULL) + ylab("Monthly Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
   geom_text(data = T_testR, aes(y = 1000, x = month, label = sign), size = 6, color = "black") 
 
@@ -475,12 +507,42 @@ ggsave("Figures/monthly_Flux_18_20_bda.pdf", Plot, width = 9, height = 10, bg = 
 bitmap <- pdf_render_page("Figures/monthly_Flux_18_20_bda.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/monthly_Flux_18_20_bda.jpeg")
 
+# 2018/2020
+tests <- data45 %>% 
+  dplyr::select(c(site_id, variable, month,  monthly_flux, year, okoregion)) %>% distinct() %>% 
+  group_by(variable, okoregion, month, year) %>% 
+  summarise(monthly_flux_mean = mean(monthly_flux)) %>% 
+  filter(variable == "TotP") %>% 
+  filter(month %in% c("Jun", "Jul")) %>% 
+  pivot_wider(names_from = "year", values_from = "monthly_flux_mean") %>% 
+  mutate(factor = `2020`/`2018`) %>% 
+  group_by(variable) %>% 
+  summarise(factor_mean = mean(factor))
 
+  #mutate(percent_change = ((`2020`-`2018`)/`2018`)*100) %>% 
+ # group_by(variable) %>% 
+ # summarise(percent_change_mean = mean(percent_change))
+
+
+```
+
+
+
+```{r}
 # 2019/2021
-data45 <- Station_Info2 %>% drop_na() %>% 
+data45 <- Station_Info2 %>% 
+  ungroup() %>% 
   filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019","2021")) %>% 
-  mutate(year = as.character(year))
+  mutate(year = as.character(year)) %>% 
+  pivot_wider(names_from = "variable", values_from = "monthly_flux") %>% 
+  mutate(Date = ymd(Date), year = year(Date), month = month(Date, label = TRUE)) %>% 
+  select(-c(day, Date, par, monthly_mean, sum_rr_mm, rapportnavn, group)) %>% 
+  pivot_longer(cols = -c(site_id, okoregion, month, year), names_to = "variable", values_to = "monthly_flux") %>% 
+  drop_na(variable) %>% distinct() %>% 
+  pivot_wider(names_from = "variable", values_from = "monthly_flux") %>% 
+  select(-"NA") %>% 
+  pivot_longer(cols = -c(site_id, okoregion, month, year), names_to = "variable", values_to = "monthly_flux") 
 
 data45$variable <- factor(data45$variable,
                         levels = c("DOC", "Fe", "Ca", "NO3", "TotN", "TotP", "N_P"),
@@ -488,10 +550,11 @@ data45$variable <- factor(data45$variable,
 
 T_testR <- data45 %>%
   dplyr::select(site_id, okoregion, month, variable, monthly_flux, year) %>% 
+  mutate(monthly_flux = log10(monthly_flux)) %>% 
   ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
   unite("ID", okoregion, month, variable, sep = "_", remove = TRUE) %>% 
   nest(data = -c(ID)) %>%  
-  mutate(t_test = map(data, ~tidy(t.test(.x$monthly_flux~.x$year)))) %>% 
+  mutate(t_test = map(data, ~tidy(t.test(.x$monthly_flux, .x$year, paired = T)))) %>% 
   dplyr::select(-c(data)) %>% 
   unnest(t_test) %>% 
   mutate(p_value = round(p.value, 4)) %>% 
@@ -506,11 +569,11 @@ Plot <-   ggplot() +
   scale_color_manual(values=c("#3399FF", "#FF8000")) +
   scale_fill_manual(values=c("#3399FF", "#FF8000")) +
    facet_grid(variable~okoregion) +
-  scale_y_log10(name = "Monthly Flux (Kg)") + 
+  scale_y_log10(name = "Monthly Flux (tonnes)") + 
   theme_bw() +
   xlab(NULL) + 
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
-  geom_text(data = T_testR, aes(y = 1000, x = month, label = sign), size = 6, color = "black") 
+  geom_text(data = T_testR, aes(y = 800, x = month, label = sign), size = 6, color = "black") 
 
 ggsave("Figures/monthly_Flux_19_21_bda.pdf", Plot, width = 9, height = 10, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/monthly_Flux_19_21_bda.pdf", page = 1, dpi = 300)
@@ -532,10 +595,11 @@ data45$variable <- factor(data45$variable,
 
 T_testR <- data45 %>%
   dplyr::select(site_id, okoregion, month, variable, monthly_flux, year) %>% 
+  mutate(monthly_flux = log10(monthly_flux)) %>% 
   ungroup() %>% distinct() %>% dplyr::select(-site_id) %>% 
   unite("ID", okoregion, month, variable, sep = "_", remove = TRUE) %>% 
   nest(data = -c(ID)) %>%  
-  mutate(t_test = map(data, ~tidy(t.test(.x$monthly_flux~.x$year)))) %>% 
+  mutate(t_test = map(data, ~tidy(t.test(.x$monthly_flux ~.x$year)))) %>% 
   dplyr::select(-c(data)) %>% 
   unnest(t_test) %>% 
   mutate(p_value = round(p.value, 4)) %>% 
@@ -549,18 +613,17 @@ options(scipen = 99999999)
 Plot <- ggplot() +
   geom_boxplot(data = data45, aes(x = month, y = monthly_flux, fill = year), outlier.shape =  NA,alpha = 0.7, width = 0.5) +
   scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
-  scale_y_log10(name = "Monthly Flux (Kg)") + # Features of the first axis
+  scale_y_log10(name = "Monthly Flux (tonnes)") + # Features of the first axis
   scale_color_manual(values=c("white", "#FF8000")) +
   facet_grid(variable~okoregion, scales = "free", labeller = label_parse) +
   theme_bw() +
-  xlab(NULL) + ylab("Monthly Flux (Kg)") +
+  xlab(NULL) + ylab("Monthly Flux (tonnes)") +
   theme(axis.text.x = element_text(size =8, angle = 45, hjust = 1)) +
   geom_text(data = T_testR, aes(y = 0.7, x = month, label = sign), size = 6, color = "black") 
 
 ggsave("Figures/monthly_Flux_All4_bda.pdf", Plot, width = 8, height = 6, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/monthly_Flux_All4_bda.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/monthly_Flux_All4_bda.jpeg")
-
 ```
 
 # Q/C Plots
@@ -574,13 +637,39 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>%
 
 Data2 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
   filter(year %in% c("2018", "2020")) %>% 
+  filter(okoregion %in% c("Finnmark", "Ostlandet", "Vest")) %>% 
   mutate(month= month(month, label = T)) %>% 
   filter(month %in% c("Jun", "Jul", "Aug", "Sep", "Oct"))
-  
+
+Data2$variable <- factor(Data2$variable, 
+    levels = c("DOC_mg_L", "Fe_ug_L", "Color_mg_L",  "TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "Ca_mg_L"),
+    labels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "Ca"))
+
+Data2$okoregion <- factor(Data2$okoregion, 
+    levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+    labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
+
+plot <- Data2 %>% 
+  ggplot(aes(x = log10(Q), y = log10(concentrations),group = interaction(site_id, year), color = factor(year))) +
+  geom_point(size= 0.02, alpha = 0.05) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
+  geom_smooth(method = "lm", size = 0.7) +
+  facet_grid(variable~okoregion, scales = "free") +
+  theme_bw() +
+  labs(color = "year") +
+  ylab(bquote('log'[10]~"Concentration")) + xlab(bquote('log'[10]~"Discharge"))
+
+ggsave("Figures/daily_Con_v_QALL.pdf", plot, width = 6, height = 8, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/daily_Con_v_QALL.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/daily_Con_v_QALL.jpeg")
+
+
+
+
 # Browning variables
 Plot <- Data2 %>% 
   filter(variable %in% c("Ca_mg_L", "DOC_mg_L", "Fe_ug_L")) %>% 
-  ggplot(aes(x = log10(flow_m3ps), y = log10(concentrations),group = interaction(site_id, year), color = factor(year))) +
+  ggplot(aes(x = log10(Q), y = log10(concentrations),group = interaction(site_id, year), color = factor(year))) +
   geom_point(size= 0.02, alpha = 0.05) +
   scale_color_manual(values=c("#FFCC66", "#264EFF")) +
   geom_smooth(method = "lm", size = 0.7) +
@@ -597,7 +686,7 @@ jpeg::writeJPEG(bitmap, "Figures/daily_flux_v_QBrown.jpeg")
 Plot2 <- Data2 %>% 
   filter(year %in% c("2018", "2020")) %>% 
   filter(variable %in% c("TotP_ug_L", "TotN_ug_L", "NO3_ug_L")) %>% 
-  ggplot(aes(x = log10(flow_m3ps), y = log10(concentrations), group = interaction(site_id, year), color = factor(year))) +
+  ggplot(aes(x = log10(Q), y = log10(concentrations), group = interaction(site_id, year), color = factor(year))) +
   geom_point(size= 0.02, alpha = 0.05) +
   scale_color_manual(values=c("#FFCC66", "#264EFF")) +
   geom_smooth(method = "lm", size = 0.7) +
@@ -627,7 +716,7 @@ Data3 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>%
 # Browning variables
 Plot3 <- Data3 %>% 
   filter(variable %in% c("Ca_mg_L", "DOC_mg_L", "Fe_ug_L")) %>% 
-  ggplot(aes(x = log10(flow_m3ps), y = log10(concentrations),group = interaction(site_id, year), color = factor(year))) +
+  ggplot(aes(x = log10(Q), y = log10(concentrations),group = interaction(site_id, year), color = factor(year))) +
   geom_point(size= 0.02, alpha = 0.05) +
   scale_color_manual(values=c("#3399FF", "#FF8000")) +
   geom_smooth(method = "lm", size = 0.7) +
@@ -643,7 +732,7 @@ jpeg::writeJPEG(bitmap, "Figures/daily_flux_v_QBrown_2019.jpeg")
 # Nutrient variables
 Plot4 <- Data3 %>% 
   filter(variable %in% c("TotP_ug_L", "TotN_ug_L", "NO3_ug_L")) %>% 
-  ggplot(aes(x = log10(flow_m3ps), y = log10(concentrations), group = interaction(site_id, year), color = factor(year))) +
+  ggplot(aes(x = log10(Q), y = log10(concentrations), group = interaction(site_id, year), color = factor(year))) +
   geom_point(size= 0.02, alpha = 0.05) +
   scale_color_manual(values=c("#3399FF", "#FF8000")) +
   geom_smooth(method = "lm", size = 0.7) +
@@ -662,7 +751,7 @@ jpeg::writeJPEG(bitmap, "Figures/daily_flux_v_QNut_2019.jpeg")
 Plot <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
   filter(!year %in% c("2017", "2022")) %>% 
   filter(variable %in% c("DOC_mg_L")) %>% 
-  ggplot(aes(x = log10(flow_m3ps), y = log10(flux), color = as.character(year))) +
+  ggplot(aes(x = log10(Q), y = log10(flux), color = as.character(year))) +
   geom_point(size =0.1) +
   facet_wrap(~site_id, scales = "free", ncol = 4) +
   theme_bw() 
@@ -703,9 +792,6 @@ jpeg::writeJPEG(bitmap, "Figures/Q_C.jpeg")
 # Slope and intercepts
 
 ```{r}
-library(Hmisc)
-library(ggstance)
-
 # Daily Concentrations (interpolated and summed back to monthly. 
 
 Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
@@ -779,7 +865,6 @@ Plot <- Data %>%
   filter(variable == "Ca_mg_L") %>% 
   ggplot(aes(x = log10(gwb_q), y = log10(concentrations), color = drought_time)) + 
   geom_point(size = 0.05) +
-  #geom_smooth(method = "lm", se = T, size = 0.1) +
   facet_grid(year~okoregion, labeller = label_parsed, scales = "free") +
   theme_bw() +
   xlab("log10(Q)") + ylab("log10(Concentration)")
@@ -832,7 +917,7 @@ Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df)
 Extract_drought_df3$drought_time <- factor(Extract_drought_df3$drought_time,
                         levels = c("Before", "During", "After"))
 
-library(ggh4x)
+
 lm_18_20 <- Extract_drought_df3 %>% 
   ggplot(aes(fill = drought_time, shape = factor(year))) +
   scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
@@ -1028,6 +1113,7 @@ Data <- full_join(Data2, Station_Info) %>%  distinct() %>% drop_na() %>%
 ```
 
 # Extract Slope and intercepts
+
 ```{r}
 # Extract slope and intercept from all plots broken down into before, during and after drought. 
 
@@ -1047,51 +1133,54 @@ Data2 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>%
 Extract_drought_df <- Data2 %>% 
   distinct() %>% 
   group_by(site_id, date, variable) %>% 
-  mutate(X = log10(flow_m3ps), Y = log10(concentrations)) %>% 
+  mutate(X = log10(Q), Y = log10(concentrations)) %>% 
   ungroup() %>% drop_na() %>% 
   group_by(site_id, year, variable) %>% 
   do({mod = lm(Y ~ X, data =.) 
   data_frame(slope = coef(mod)[2], intercept = coef(mod)[1], r2 = summary(mod)$r.squared)}) 
 
 Extract_drought_df2 <- full_join(Extract_drought_df, Data2) 
-  #group_by(year, okoregion, group, variable) %>%
- # summarise_at(vars(matches("slope|intercept")), funs(mean=mean))
 
-Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) 
+Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>% 
+  dplyr::select(c(site_id, variable, slope, intercept, okoregion, year, group)) %>% distinct()
+
+Extract_drought_df3$variable <- factor(Extract_drought_df3$variable, 
+                                       levels = c("DOC_mg_L", "Fe_ug_L", "Color_mg_L",  "TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "Ca_mg_L"),
+                                       labels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "Ca"))
+
+Extract_drought_df3$okoregion <- factor(Extract_drought_df3$okoregion, 
+                                       levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+                                       labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
 
 
 # 18/20
 # Intercept
-library(ggstance)
-lm_dots_18_Inter <- Extract_drought_df3 %>%
-  distinct() %>% 
-  ggplot(aes(fill = factor(year), x = intercept, y = reorder(variable,intercept))) +
-  #geom_point(aes(x = intercept, y = reorder(variable,intercept)), shape = 21, size = 2.5, alpha = 0.6) +
-  stat_summary(fun = mean, na.rm = TRUE, geom = "point", shape = 21, size = 2, stoke = 3, color = "black") +
-  stat_summaryh(fun.data = mean_cl_boot_h, conf.int = .95, geom ="errorbarh", width = 0.1) +
-  scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
+lm_dots_18_Inter <- Extract_drought_df3 %>% 
+  ggplot(aes(x = intercept, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Intercept") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
   
 # Slope
 lm_dots_18_S <- Extract_drought_df3 %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018","2020")) %>% 
-  ggplot(aes(fill = factor(year))) +
-  geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), shape = 21, size = 2.5, alpha = 0.6) +
-  scale_fill_manual(values=c("#FFCC66", "#264EFF")) +
+  ggplot(aes(x = slope, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66", "#264EFF")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   theme(legend.position="bottom") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Slope") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
   
 p <- (lm_dots_18_Inter/lm_dots_18_S) + plot_annotation(tag_levels = 'A')
 
@@ -1101,50 +1190,62 @@ jpeg::writeJPEG(bitmap, "Figures/lm_dots_18.jpeg")
 
 
 # 19/21
+Data3 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(year %in% c("2019", "2021")) %>% 
+  mutate(month= month(month, label = T)) %>% 
+  filter(month %in% c("Jun", "Jul", "Aug", "Sep", "Oct"))
+
 Extract_drought_df <- Data3 %>% 
   distinct() %>% 
   group_by(site_id, date, variable) %>% 
-  mutate(X = log10(flow_m3ps), Y = log10(concentrations)) %>% 
+  mutate(X = log10(Q), Y = log10(concentrations)) %>% 
   ungroup() %>% drop_na() %>% 
   group_by(site_id, year, variable) %>% 
   do({mod = lm(Y ~ X, data =.) 
   data_frame(slope = coef(mod)[2], intercept = coef(mod)[1], r2 = summary(mod)$r.squared)}) 
 
-Extract_drought_df2 <- full_join(Extract_drought_df, Data3) %>% 
-  group_by(year, okoregion, group, variable) %>%
-  summarise_at(vars(matches("slope|intercept")), funs(mean=mean))
+Extract_drought_df2 <- full_join(Extract_drought_df, Data3) 
 
-Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) 
+Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>% 
+  dplyr::select(c(site_id, variable, slope, intercept, okoregion, year, group)) %>% distinct()
+
+Extract_drought_df3$variable <- factor(Extract_drought_df3$variable, 
+                                       levels = c("DOC_mg_L", "Fe_ug_L", "Color_mg_L",  "TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "Ca_mg_L"),
+                                       labels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "Ca"))
+
+Extract_drought_df3$okoregion <- factor(Extract_drought_df3$okoregion, 
+                                       levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+                                       labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
 
 # Intercept
 lm_dots_19_Inter <- Extract_drought_df3 %>% 
   filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019","2021")) %>% 
-  ggplot(aes(fill = factor(year))) +
-  geom_point(aes(x = intercept_mean, y = reorder(variable,intercept_mean)), shape = 21, size = 2.5, alpha = 0.6) +
-  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
+  ggplot(aes(x = slope, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Intercept") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
 
 # Slope
 lm_dots_19_S <- Extract_drought_df3 %>% 
   filter(group %in% c("'19/'21")) %>% 
   filter(year %in% c("2019","2021")) %>% 
-  ggplot(aes(fill = factor(year))) +
-  geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), shape = 21, size = 2.5, alpha = 0.6) +
-  scale_fill_manual(values=c("#3399FF", "#FF8000")) +
+  ggplot(aes(x = slope, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#3399FF", "#FF8000")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   theme(legend.position="bottom") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Slope") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
   
 p <- (lm_dots_19_Inter/lm_dots_19_S)  + plot_annotation(tag_levels = 'A')
 
@@ -1155,51 +1256,62 @@ jpeg::writeJPEG(bitmap, "Figures/lm_dots_19.jpeg")
 
 #ALL
 
-Extract_drought_df <- Data3 %>% 
+Data4 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(group %in% c("'18/'19/'20/'21")) %>% 
+  filter(year %in% c("2019", "2021", "2018", "2020")) %>% 
+  mutate(month= month(month, label = T)) %>% 
+  filter(month %in% c("Jun", "Jul", "Aug", "Sep", "Oct"))
+
+Extract_drought_df <- Data4 %>% 
   distinct() %>% 
   group_by(site_id, date, variable) %>% 
-  mutate(X = log10(flow_m3ps), Y = log10(concentrations)) %>% 
+  mutate(X = log10(Q), Y = log10(concentrations)) %>% 
   ungroup() %>% drop_na() %>% 
   group_by(site_id, year, variable) %>% 
   do({mod = lm(Y ~ X, data =.) 
   data_frame(slope = coef(mod)[2], intercept = coef(mod)[1], r2 = summary(mod)$r.squared)}) 
 
-Extract_drought_df2 <- full_join(Extract_drought_df, Data2) %>% 
-  group_by(year, okoregion, group, variable) %>%
-  summarise_at(vars(matches("slope|intercept")), funs(mean=mean))
+Extract_drought_df2 <- full_join(Extract_drought_df, Data4)
 
-Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) 
+Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>% 
+  dplyr::select(c(site_id, variable, slope, intercept, okoregion, year, group)) %>% distinct()
+
+Extract_drought_df3$variable <- factor(Extract_drought_df3$variable, 
+                                       levels = c("DOC_mg_L", "Fe_ug_L", "Color_mg_L",  "TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "Ca_mg_L"),
+                                       labels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "Ca"))
+
+Extract_drought_df3$okoregion <- factor(Extract_drought_df3$okoregion, 
+                                       levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+                                       labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
 
 # Intercept
 lm_dots_ALL_Inter <- Extract_drought_df3 %>% 
   filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018","2019", "2020","2021")) %>% 
-  ggplot(aes(fill = factor(year))) +
-  geom_point(aes(x = intercept_mean, y = reorder(variable,intercept_mean)), size = 2.5, alpha = 0.6) +
-  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
-  scale_shape_manual(values=c(21, 22, 23, 24))+
+  ggplot(aes(x = intercept, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66", "#3399FF", "#264EFF", "#FF8000")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   theme(legend.position="none") +
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Intercept") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
 
 # Slope
 lm_dots_ALL_S <- Extract_drought_df3 %>% 
   filter(group %in% c("'18/'19/'20/'21")) %>% 
   filter(year %in% c("2018","2019", "2020","2021")) %>% 
-  ggplot(aes(fill = factor(year))) +
-  geom_point(aes(x = slope_mean, y = reorder(variable,slope_mean)), size = 2.5, alpha = 0.6) +
-  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
-  scale_shape_manual(values=c(21, 22, 23, 24))+
+  ggplot(aes(x = slope, y = factor(variable), color = factor(year))) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  scale_color_manual(values=c("#FFCC66", "#3399FF", "#264EFF", "#FF8000")) +
   facet_grid(~okoregion, scales="free") +
-  theme_bw() + labs(fill = "Drought", shape = "year") + 
-  guides(fill = guide_legend(override.aes=list(shape = 21)), shape = guide_legend(override.aes=list(color="black"))) +
+  theme_bw() + labs(color = "year") + 
   geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
   xlab("Q/C Slope") + ylab(NULL) + 
-  theme(text = element_text(size = 16))
+  theme(text = element_text(size = 16)) +
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) 
   
 p <- (lm_dots_ALL_Inter/lm_dots_ALL_S) + plot_annotation(tag_levels = 'A') + plot_layout(guides = "collect")
 
@@ -1208,14 +1320,67 @@ bitmap <- pdf_render_page("Figures/lm_dots_ALL.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/lm_dots_ALL.jpeg")
 ```
 
+# Q/C plot for setting up hypotheses
+
+```{r}
+# Extract slope and intercept from all plots broken down into before, during and after drought. 
+library(Hmisc)
+library(ggstance)
+# Daily flux
+daily_flux_all <- read.csv("Clean_Data/daily_flux_all.csv")
+
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>% 
+  dplyr::select(site_id, rapportnavn, okoregion, group) 
+
+Data2 <- full_join(daily_flux_all, Station_Info) %>% drop_na() %>% 
+  filter(group %in% c("'18/'20", "'19/'21")) %>% 
+  filter(year %in% c("2018","2020", "2019","2021")) 
+
+Extract_drought_df <- Data2 %>% 
+  distinct() %>% 
+  group_by(site_id, date, variable) %>% 
+  mutate(X = log10(Q), Y = log10(concentrations)) %>% 
+  ungroup() %>% drop_na() %>% 
+  group_by(site_id, group, variable) %>% 
+  do({mod = lm(Y ~ X, data =.) 
+  data_frame(slope = coef(mod)[2], intercept = coef(mod)[1], r2 = summary(mod)$r.squared)}) 
+
+Extract_drought_df2 <- full_join(Extract_drought_df, Data2) 
+Extract_drought_df3 <- full_join(Extract_drought_df2, Extract_drought_df) %>% 
+  dplyr::select(c(site_id, variable, slope, okoregion, group)) %>% distinct()
+
+Extract_drought_df3$variable <- factor(Extract_drought_df3$variable, 
+                                       levels = c("DOC_mg_L", "Fe_ug_L", "Color_mg_L",  "TotP_ug_L", "TotN_ug_L", "NO3_ug_L", "Ca_mg_L"),
+                                       labels = c("DOC", "Fe", "Color", "TotP", "TotN", "NO3", "Ca"))
+
+Extract_drought_df3$okoregion <- factor(Extract_drought_df3$okoregion, 
+                                       levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+                                       labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
+
+Extract_drought_df3$group <- factor(Extract_drought_df3$group, 
+                                       levels = c("'18/'20", "'19/'21"),
+                                       labels = c("2018 & 2020", "2019 & 2021"))
+
+# Slope
+lm_dots_hypo <- Extract_drought_df3 %>% 
+  distinct() %>% 
+  ggplot(aes(x = slope, y = factor(variable), color = okoregion)) +
+  stat_summary(fun.data = "mean_cl_boot", size = 0.8) +
+  facet_grid(~group, scales="free") +
+  theme_bw() + 
+  geom_vline(xintercept = 0, linetype="dotted", color = "gray45", size=1.5) +
+  xlab("Q/C Slope") + ylab(NULL) + 
+  scale_y_discrete(limits = rev(levels(Extract_drought_df3$variable))) +
+  theme(text = element_text(size = 16)) + labs(color = "Økoregion")
+
+ggsave("Figures/Q_C_Slope_hypothes.pdf", lm_dots_hypo, width = 9, height = 4, bg = "white", device = cairo_pdf)
+bitmap <- pdf_render_page("Figures/Q_C_Slope_hypothes.pdf", page = 1, dpi = 300)
+jpeg::writeJPEG(bitmap, "Figures/Q_C_Slope_hypothes.jpeg")
+```
+
 # Corrplot Slope & intercept
 
 ```{r}
-library(tidyverse)
-library(broom)
-library(fs)
-library(lubridate)
-library(caret)
 
 Extract_drought_df3 <- read_csv("Clean_Data/Extract_drought.csv") %>% 
   dplyr::select(-c(slope_mean, intercept_mean, r2)) %>% 
@@ -1361,21 +1526,20 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>%
   dplyr::select(site_id, rapportnavn, okoregion, group) 
 
 flow_daily <- read_csv("Clean_Data/daily_flux_all.csv") %>% 
-  dplyr::select(site_id, month, date, year, flow_m3ps) 
+  dplyr::select(site_id, month, date, year, Q) 
 
-Data <- full_join(flow_daily, Station_Info) %>%  distinct() %>% drop_na() %>% 
+Data <- full_join(Q, Station_Info) %>%  distinct() %>% drop_na() %>% 
   filter(!year %in% c("2017", "2022")) %>% 
   group_by(rapportnavn, date) %>% 
-  mutate(flow_m3ps = flow_m3ps * 86400) %>% ungroup() %>% 
   group_by(rapportnavn, year, month) %>% 
-  mutate(flow_m3ps = mean(flow_m3ps)) %>%  ungroup() %>% 
+  mutate(Q = mean(Q)) %>%  ungroup() %>% 
   group_by(rapportnavn, year) %>% 
-  summarise(group = group, site_id = site_id, okoregion = okoregion,date = date, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
-  mutate(flow_m3ps_sd = (flow_m3ps - mean)/sd)
+  summarise(group = group, site_id = site_id, okoregion = okoregion,date = date, Q = Q, mean = mean(Q), sd=sd(Q)) %>% 
+  mutate(Q = (Q - mean)/sd)
 
 # All stations
 Plot <- Data %>% 
-  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = Q_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
   #geom_smooth(method = "lm", se = T, size = 0.1) +
@@ -1394,7 +1558,7 @@ jpeg::writeJPEG(bitmap, "Figures/standard_flow.jpeg")
 Plot1 <- Data %>% 
   filter(group == "'18/'20") %>% 
   filter(year %in% c("2018", "2020")) %>% 
-  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = Q_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
   scale_color_manual(values=c("#FFCC66", "#264EFF")) +
@@ -1408,7 +1572,7 @@ Plot1 <- Data %>%
 Plot2 <- Data %>% 
   filter(group == "'19/'21") %>% 
   filter(year %in% c("2019", "2021")) %>% 
-  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = Q_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
   scale_color_manual(values=c("#3399FF", "#FF8000")) +
@@ -1420,7 +1584,7 @@ Plot2 <- Data %>%
 
 Plot3 <- Data %>% 
   filter(group == "'18/'19/'20/'21") %>% 
-  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd, group = factor(year(date)), color = factor(year(date)))) + 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = Q_sd, group = factor(year(date)), color = factor(year(date)))) + 
   geom_line() +
   geom_point(size = 0.05) +
   scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
@@ -1448,12 +1612,10 @@ jpeg::writeJPEG(bitmap, "Figures/group3_Flow.jpeg")
 
 ```{r}
 ##### Cluster flow curves
-library(kmlShape)
-
 Data2 <- Data %>% 
   unite("ID", rapportnavn:year, sep = "_", remove = TRUE, na.rm = FALSE) %>% 
   mutate(month = month(date)) %>% 
-  dplyr::select(ID, month, flow_m3ps_sd) %>% distinct()
+  dplyr::select(ID, month, Q_sd) %>% distinct()
 
 Data2 <- as.data.frame(Data2)
 myClds = cldsLong(Data2)
@@ -1471,7 +1633,7 @@ plot(myClds)
 Data2 <- Data %>% 
   unite("ID", rapportnavn:year, sep = "_", remove = TRUE, na.rm = FALSE) %>% 
   mutate(month = month(date)) %>% 
-  dplyr::select(ID, month, flow_m3ps_sd) %>% distinct()
+  dplyr::select(ID, month, Q_sd) %>% distinct()
 
 Data2 <- as.data.frame(Data2)
 myClds = cldsLong(Data2)
@@ -1497,7 +1659,7 @@ Data3 <- Data %>%
 Data4 <- full_join(Data3, clusters2)
 
 Plot <- Data4 %>% 
-  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = flow_m3ps_sd)) + 
+  ggplot(aes(x = month(date, label=TRUE, abbr=TRUE), y = Q_sd)) + 
   geom_line(aes(group = factor(ID), color = factor(cluster)), size = 0.9, alpha = 0.5) +
   geom_point(aes(group = factor(ID), color = factor(cluster)), size = 0.03, alpha = 0.6) +
   stat_summary(aes(group = cluster), fun.y=mean, colour="black", geom="line", size = 1.4) +
@@ -1523,27 +1685,25 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv") %>%
   dplyr::select(site_id, rapportnavn, okoregion, group) 
 
 flow_daily <- read_csv("Clean_Data/Intermediate/Hydrology_Data_daily_ALLYEARS.csv") %>% 
-  dplyr::select(site_id, month, datetime, year, flow_m3ps = value_mean) 
+  dplyr::select(site_id, month, datetime, year, Q = value_mean) 
 
 Data <- full_join(flow_daily, Station_Info) %>%  distinct() %>% drop_na() %>% 
   #filter(!year %in% c("2017", "2022")) %>% 
  # group_by(rapportnavn, datetime) %>% 
-  #mutate(flow_m3ps = flow_m3ps * 86400) %>% ungroup() %>% 
+  #mutate(Q = Q * 86400) %>% ungroup() %>% 
   group_by(rapportnavn, month) %>% 
-  mutate(flow_m3ps = mean(flow_m3ps)) %>%  ungroup() %>% 
+  mutate(Q = mean(Q)) %>%  ungroup() %>% 
   group_by(rapportnavn) %>% 
-  summarise(group = group, site_id = site_id, okoregion = okoregion,date = datetime, flow_m3ps = flow_m3ps, mean = mean(flow_m3ps), sd=sd(flow_m3ps)) %>% 
-  mutate(flow_m3ps_sd = (flow_m3ps - mean)/sd) %>%
+  summarise(group = group, site_id = site_id, okoregion = okoregion,date = datetime, Q = Q, mean = mean(Q), sd=sd(Q)) %>% 
+  mutate(Q_sd = (Q - mean)/sd) %>%
   mutate(month = month(date)) %>% 
   dplyr::select(-c(date)) %>% distinct()
 
 ##### Cluster flow curves
-library(kmlShape)
-
 Data2 <- Data %>% 
   #unite("ID", rapportnavn:year, sep = "_", remove = TRUE, na.rm = FALSE) %>% 
   #mutate(month = month(date)) %>% 
-  dplyr::select(rapportnavn, month, flow_m3ps_sd) %>% distinct()
+  dplyr::select(rapportnavn, month, Q_sd) %>% distinct()
 
 #Data2 <- as.data.frame(Data2)
 #myClds = cldsLong(Data2)
@@ -1561,7 +1721,7 @@ set.seed(123)
 #Data2 <- Data %>% 
 #  unite("ID", rapportnavn:year, sep = "_", remove #= TRUE, na.rm = FALSE) %>% 
 #  mutate(month = month(date)) %>% 
-#  dplyr::select(ID, month, flow_m3ps_sd) %>% distinct()
+#  dplyr::select(ID, month, Q_sd) %>% distinct()
 
 Data2 <- as.data.frame(Data2)
 myClds = cldsLong(Data2)
@@ -1583,13 +1743,13 @@ plot(myClds)
 #  mutate(ID = row.names(.))
 
 
-Data3 <- Data %>% dplyr::select(c(rapportnavn, month, flow_m3ps_sd))
+Data3 <- Data %>% dplyr::select(c(rapportnavn, month, Q_sd))
   
 #unite("ID", rapportnavn:year, sep = "_", remove = F, na.rm = FALSE) 
 Data4 <- full_join(Data3, clusters2)
 
 Plot <- Data4 %>% 
-  ggplot(aes(x = month(month, label = T), y = flow_m3ps_sd)) + 
+  ggplot(aes(x = month(month, label = T), y = Q_sd)) + 
   geom_line(aes(group = factor(rapportnavn), color = factor(cluster)), size = 0.9, alpha = 0.5) +
   geom_point(aes(group = factor(rapportnavn), color = factor(cluster)), size = 0.03, alpha = 0.6) +
   stat_summary(aes(group = cluster), fun.y=mean, colour="black", geom="line", size = 1.4) +
@@ -1605,6 +1765,7 @@ ggsave("Figures/standard_flow_cluster_allyears.pdf", Plot, width = 3, height = 8
 bitmap <- pdf_render_page("Figures/standard_flow_cluster_allyears.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/standard_flow_cluster_allyears.jpeg")
 ```
+
 ```{r}
 
 ```
@@ -1612,11 +1773,6 @@ jpeg::writeJPEG(bitmap, "Figures/standard_flow_cluster_allyears.jpeg")
 # Flow curves clusted + Map
 
 ```{r}
-library(ggspatial)
-library("rnaturalearth")
-library("rnaturalearthdata")
-library(RColorBrewer)
-
 # river station coordinates
 Station_Info <- read_csv("Clean_Data/Station_Info.csv") 
 

@@ -20,13 +20,26 @@ Station_Info <- read_csv("Clean_Data/Station_Info.csv")
 # PCAs
 ```{r}
 # Station information PCA
+Water_Chem2 <- Water_Chem %>% 
+  dplyr::select(c(site_id, Date, DOC = DOC_mg_L, Fe = Fe_ug_L,  TotP = TotP_ug_L, TotN = TotN_ug_L, NO3 = NO3_ug_L, Ca = Ca_mg_L)) %>% 
+  pivot_longer(cols= -c(site_id, Date)) %>% 
+  mutate(year = year(Date)) %>% 
+ filter(year %in% c("2018", "2020", "2019", "2021")) %>% 
+  dplyr::select(-c(year, Date)) %>% 
+  group_by(site_id, name) %>% 
+  summarise(value_mean = mean(value, na.rm=TRUE)) %>% 
+  pivot_wider(names_from = "name", values_from = "value_mean")
 
 # Dataset for calculating PCA
-Data <- Station_Info %>%
-  dplyr::select(c(okoregion, area_km2, mean_elevation, mean_slope, mean_annual_tm, sum_annual_rr, mean_annual_gwb_q, mean_annual_gwb_sssrel)) %>% drop_na()
+Data <- full_join(Station_Info, Water_Chem2) %>%
+  dplyr::select(c(okoregion, area=area_km2, elevation = mean_elevation, slope = mean_slope, temp = mean_annual_tm, precipitation = sum_annual_rr, discharge = mean_annual_gwb_q, soil_moisture = mean_annual_gwb_sssrel, DOC, Fe, TotP, TotN, NO3, Ca)) %>% drop_na()
+
+Data$okoregion <- factor(Data$okoregion,
+                         levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+                         labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
 
 Envar2 <- Data %>% 
-  dplyr::select(-c(okoregion)) %>% drop_na()
+  dplyr::select(-c(okoregion, DOC, Fe, TotP, TotN, NO3, Ca)) %>% distinct()
 Envar <- scale(Envar2)
 
 # PCA in Vegan
@@ -41,18 +54,34 @@ fit_envar <- envfit(water_chem_PCA, Envar, perm = 999, na.rm = T) %>%
   as.data.frame() %>% 
   rownames_to_column("species")
 
+
+###### Passive vectors: browning
+Brown2 <- Data %>% 
+  dplyr::select(c(DOC, Fe, TotP, TotN, NO3, Ca)) 
+Brown <- scale(Brown2)
+
+fit_brown <- envfit(water_chem_PCA, Brown, perm = 999, na.rm = T) %>% 
+  scores(., display = "vectors") %>% 
+  as.data.frame() %>% 
+  rownames_to_column("species")
+
 #Plot
+library(ggrepel)
 Plot_PCA <- ggplot() +
   geom_point(data = PCAscores, aes(x = PC1, y = PC2, color = Data$okoregion), 
              size= 3, alpha = 0.7) +
   theme_classic() +
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) + 
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +
-  labs(x = "PC1 (40.8 %)", y = "PC2 (28.3 %)") + 
+  labs(x = "PC1 (40.7 %)", y = "PC2 (28.0 %)") + 
   geom_segment(data = fit_envar, aes(x = 0, xend = PC1, y = 0, yend = PC2), 
-               arrow = arrow(length = unit(0.1, "cm")), col = "gray45") +
-  geom_text(data = fit_envar, aes(x = PC1, y= PC2, label = species), 
-                  parse = T, col="gray45", size = 4, segment.size = 0.15) +
+               arrow = arrow(length = unit(0.1, "cm")), col = "black") +
+  geom_text(data = fit_envar, aes(x = PC1+0.1, y= PC2+0.1, label = species), 
+                  parse = T, col="black", size = 3, segment.size = 0.15) +
+  geom_segment(data = fit_brown, aes(x = 0, xend = PC1, y = 0, yend = PC2), 
+               arrow = arrow(length = unit(0.1, "cm")), col = "blue") +
+  geom_text(data = fit_brown, aes(x = PC1+0.05, y= PC2 +0.06, label = species), 
+                  parse = T, col="blue", size = 3, segment.size = 0.45) +
   theme(text = element_text(size = 15),legend.text = element_text(size=rel(0.6)), 
           legend.title = element_blank(), panel.background = element_rect(colour = "black", size=1)) + 
   ylim(-1.5, 1.5) + xlim(-1.5, 1.5) 
@@ -63,6 +92,8 @@ ggsave("Figures/Catchment_PCA.pdf", Plot_PCA, width = 6, height = 4, bg = "white
 bitmap <- pdf_render_page("Figures/Catchment_PCA.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Catchment_PCA.jpeg")
 ```
+
+
 
 ```{r}
 # CA for land cover

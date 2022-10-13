@@ -23,6 +23,49 @@ library(jpeg)
 library(pdftools)
 ```
 
+```{r}
+# Station Map
+# Load libraries
+library(tidyverse)
+library(sf)
+library(tmap)
+
+# delineated watersheds
+watershed70 <- read_sf("Raw_Data/Shape_files/catchment_delineation/RefElv.shp") 
+Norway <- read_sf("Raw_Data/Shape_files/Norway_shapefile/Fylker.geojson") 
+
+# river station coordinates
+Station_Info <- read_csv("Clean_Data/Station_Info.csv") 
+stations_cord <- st_as_sf(Station_Info, coords = c("longitude", "latitude"), crs = "WGS84", remove = FALSE)
+stations_cord = st_transform(stations_cord, "EPSG:25833")
+
+# Interactive map
+stations_cord2 <- stations_cord %>% filter(!group %in% c("incomplete", "'18/'19/'20/'21")) 
+stations_cord2$okoregion <- factor(stations_cord2$okoregion, 
+ levels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Ostlandet", "Sorlandet", "Vest"),
+ labels = c("Finnmark", "Midt-Norge", "Nord-Norge ytre",  "Østlandet", "Sørlandet", "Vestlandet"))
+
+
+tmap_mode(mode = c("plot")) 
+
+tm <- tm_shape(Norway) + 
+   tm_borders() +
+   tm_graticules(lines = F) + 
+  tm_shape(watershed70) + 
+   tm_borders() +
+  tm_shape(stations_cord2) + 
+  tm_symbols(size = 0.3, col = "okoregion", shape = "group", 
+             palette = c("#F8766D", "#B79F00", "#00BA38", "#00BFC4", "#619CFF", "#F564E3"), 
+             title.col = "Økoregion",
+             title.shape = "Sampling years",
+             shapes.legend.fill = "gray") + 
+  tm_compass(position = c("left", "top")) 
+  
+
+tm
+
+tmap_save(tm, "Figures/map.png", height = 4) 
+```
 
 ```{r }
 #| eval = F
@@ -271,18 +314,19 @@ a <- b*(ylim.prim_SUMS[1] - ylim.sec_SUMS[1])
 Plot1_18 <- Tog_Plotter %>% 
   filter(group %in% c("'18/'20")) %>% 
   filter(year %in% c("2018", "2020")) %>% 
+  filter(okoregion %in% c("Finnmark", "Ostlandet", "Vest")) %>% 
   ggplot() + 
   geom_col(aes(x = month, y = sum_rr_mm, fill = factor(year)), position = "dodge", size = 1.0) +
   scale_color_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
   scale_fill_manual(values=c("#FFCC66","#3399FF","#264EFF", "#FF8000")) +
   #geom_line(aes(x = month, y = gwb_q_mm), color = "black", size = 0.8) +
-  scale_y_continuous(name = "precipitation", # Features of the first axis
-  sec.axis = sec_axis(~ (. - a)/b, name = "discharge")) +  # Add a second axis and specify its features 
+  scale_y_continuous(name = "precipitation (mm)", # Features of the first axis
+  sec.axis = sec_axis(~ (. - a)/b, name = "discharge (mm)")) +  # Add a second axis and specify its features 
   geom_smooth(aes(x = month, y = a + gwb_q_mm*b, group = factor(year)), color = "black", method = "gam", se = F) +
-  facet_grid(okoregion~ year, scales = "free") +
+  facet_grid(okoregion~ year) +
   theme_bw() + xlab(NULL) + labs(fill ="year")
 
-ggsave("Figures/Precip_discharge_18.pdf", Plot1_18, width = 9, height = 6, bg = "white", device = cairo_pdf)
+ggsave("Figures/Precip_discharge_18.pdf", Plot1_18, width = 8, height = 5, bg = "white", device = cairo_pdf)
 bitmap <- pdf_render_page("Figures/Precip_discharge_18.pdf", page = 1, dpi = 300)
 jpeg::writeJPEG(bitmap, "Figures/Precip_discharge_18.jpeg")
 

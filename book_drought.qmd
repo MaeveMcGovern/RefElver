@@ -1,8 +1,10 @@
 # Drought {.unnumbered}
 
-Drought impacts on water chemistry:
+![](Figures/SEM.jpeg){fig-align="center" width="50%"}
 
-hypotheses:
+Conceptual figure illustrating the expected relationships between temperature and precipitation on water chemistry and fluxes.
+
+Specific hypotheses:
 
 -   **Temperature:** increased water temperatures expected during drought. or, alternatively, decreased temperatures due to increased ground water contribution.
 

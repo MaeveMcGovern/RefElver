@@ -8,51 +8,37 @@
 ![Figure. Seasonal flow regimes grouped into 5 clusters using k-means clustering. These correspond to mountain regime (1/2?), inland regime (3), Atlantic regime (4) and Baltic regime (5).](Figures/map_clusters2.jpeg){fig-align="center"}
 :::
 
-## Fluxes
+## Annual Fluxes
 
 ::: panel-tabset
 ### 2018/2020
 
 ![](Figures/Annual_Flux_18_20.jpeg){fig-align="center"}
 
-![](Figures/monthly_Flux_18_20_bda.jpeg)
-
 ### 2019/2021
 
 ![](Figures/Annual_Flux_19_21.jpeg){fig-align="center"}
-
-![](Figures/monthly_Flux_19_21_bda.jpeg)
 
 ### '18/'19/'20/'21
 
 ![](Figures/Annual_Flux_All4.jpeg){fig-align="center"}
 :::
 
-## Q/C
+## Monthly
 
 ::: panel-tabset
 ### 2018/2020
 
-#### Browning
-
-![](Figures/daily_flux_v_QBrown.jpeg){fig-align="center" width="80%"}
-
-#### Nutrification
-
-![](Figures/daily_flux_v_QNut.jpeg){fig-align="center" width="80%"}
-
-### 2019/2021
-
-#### Browning
-
-![](Figures/daily_flux_v_QNut_2019.jpeg){fig-align="center" width="80%"}
-
-#### Nutrification
-
-![](Figures/daily_flux_v_QBrown_2019.jpeg){fig-align="center" width="80%"}
+![](Figures/monthly_Flux_18_20_bda.jpeg)
 :::
 
+## Q/C
+
 ::: panel-tabset
+### All data
+
+![](Figures/Q_C_Slope_hypothes.jpeg){fig-align="center" width="80%"}
+
 ### 2018/2020
 
 ![](Figures/lm_dots_18.jpeg){fig-align="center" width="80%"}
@@ -64,6 +50,14 @@
 ### 2018/2019/2020/2021
 
 ![](Figures/lm_dots_ALL.jpeg){fig-align="center" width="60%"}
+:::
+
+## Q/C Regressions
+
+::: panel-tabset
+### 2018/2020
+
+![](Figures/daily_Con_v_QALL.jpeg){fig-align="center"}
 :::
 
 ## Pearson's correlation
